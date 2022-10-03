@@ -1,4 +1,9 @@
 Django~=3.2
 django-extensions
+django-environ
 psycopg2
 elasticsearch
+pytest
+pytest-django
+pytest-factory
+inflection

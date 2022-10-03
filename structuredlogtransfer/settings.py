@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import environ
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,16 +29,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-AUDIT_TABLE_NAME = "audit_logs"
-ENABLE_SEND_AUDIT_LOG = True
 CLEAR_AUDIT_LOG_ENTRIES = True
 
-ELASTICSEARCH_APP_AUDIT_LOG_INDEX = "test-app-audit-index"
-ELASTICSEARCH_USERNAME = "test-audit-username"
-ELASTICSEARCH_PASSWORD = "test-audit-password"
-
-ELASTICSEARCH_HOST = "platta-audit-elastic.hel.fi"
-ELASTICSEARCH_PORT = 443
 
 # Application definition
 
@@ -81,6 +75,40 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'structuredlogtransfer.wsgi.application'
 
+
+env = environ.Env(
+    DEBUG=(bool, False),
+    NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
+    ALLOWED_HOSTS=(list, ["*"]),
+    USE_X_FORWARDED_HOST=(bool, False),
+    DATABASE_URL=(
+        str,
+        "postgres:///structuredlogs",
+    ),
+    ELASTICSEARCH_APP_AUDIT_LOG_INDEX=(str, "app_audit_log"),
+    ELASTICSEARCH_HOST=(str, ""),
+    ELASTICSEARCH_PORT=(int, 0),
+    ELASTICSEARCH_USERNAME=(str, ""),
+    ELASTICSEARCH_PASSWORD=(str, ""),
+    CLEAR_AUDIT_LOG_ENTRIES=(bool, False),
+    ENABLE_SEND_AUDIT_LOG=(bool, False),
+    DB_PREFIX=(str, ""),
+    AUDIT_LOG_ORIGIN=(str, ""),    
+    AUDIT_TABLE_NAME=(str,"audit_logs")
+)
+
+# Audit logging
+AUDIT_LOG_ORIGIN = env.str("AUDIT_LOG_ORIGIN")
+CLEAR_AUDIT_LOG_ENTRIES = env.bool("CLEAR_AUDIT_LOG_ENTRIES")
+ELASTICSEARCH_APP_AUDIT_LOG_INDEX = env.str("ELASTICSEARCH_APP_AUDIT_LOG_INDEX")
+ELASTICSEARCH_HOST = env("ELASTICSEARCH_HOST")
+ELASTICSEARCH_PORT = env.int("ELASTICSEARCH_PORT")
+ELASTICSEARCH_USERNAME = env.str("ELASTICSEARCH_USERNAME")
+ELASTICSEARCH_PASSWORD = env.str("ELASTICSEARCH_PASSWORD")
+ENABLE_SEND_AUDIT_LOG = env.bool("ENABLE_SEND_AUDIT_LOG")
+AUDIT_TABLE_NAME = env.str("AUDIT_TABLE_NAME")
+
+DATABASE_URL=env.str("DATABASE_URL")
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
