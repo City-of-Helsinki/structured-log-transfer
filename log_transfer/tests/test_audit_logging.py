@@ -12,6 +12,7 @@ from log_transfer.models import AuditLogEntry
 from log_transfer.tasks import (
     clear_audit_log_entries,
     send_audit_log_to_elastic_search,
+    get_entries_from_elastic_search
 )
 
 
@@ -175,7 +176,12 @@ def test_send_audit_log(user, fixed_datetime):
     assert AuditLogEntry.objects.count() == 3
 
     send_audit_log_to_elastic_search()
+    result = get_entries_from_elastic_search()
+    print(result)
+    # TODO: Assert not correctly done yet
+    assert result.hits.total.value == 3
 
+	# TODO: Clean up unnecessary parts..
     new_sent_log = AuditLogEntry.objects.all()[0]
     expired_unsent_log = AuditLogEntry.objects.all()[1]
     expired_sent_log = AuditLogEntry.objects.all()[2]
