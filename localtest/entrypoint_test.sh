@@ -1,15 +1,10 @@
 #!/bin/bash
 
-# Does not work, curl does not like http 0.9 response
-#until curl -vvv --insecure http://localhost:9300/
-#do
-#  echo Waiting for elastic pod to go alive...
-#  curl --version
-#  sleep 1
-#done
+# Wait until the elastic no longer says connection refused
+echo Waiting for the elastic to start...
+curl -s --retry-connrefused --retry-delay 1 --retry 240 --insecure http://localhost:9200/
 
-# Sleeping fixed time until the loop has been fixed
-sleep 60
-
+#Do the testing
+echo Running the tests..
 pytest
-
+echo Tests done, see the output above. See also elastic.log if you need to debug the elasticsearch logs.

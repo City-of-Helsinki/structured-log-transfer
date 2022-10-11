@@ -2,4 +2,4 @@
 .gitignore
 localtest
 README.md
-
+*.log

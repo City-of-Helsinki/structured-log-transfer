@@ -12,7 +12,8 @@ from log_transfer.models import AuditLogEntry
 from log_transfer.tasks import (
     clear_audit_log_entries,
     send_audit_log_to_elastic_search,
-    get_entries_from_elastic_search
+    get_entries_from_elastic_search,
+    search_entries_from_elastic_search
 )
 
 
@@ -174,32 +175,24 @@ def test_send_audit_log(user, fixed_datetime):
         ip_address="192.168.1.1",
     )
     assert AuditLogEntry.objects.count() == 3
-
-    send_audit_log_to_elastic_search()
-    result = get_entries_from_elastic_search()
+	
+    ids = send_audit_log_to_elastic_search()
+    print("IDS: ", ids)
+    assert len(ids) == 3
+    
+    result = get_entries_from_elastic_search(ids)
     print(result)
-    # TODO: Assert not correctly done yet
-    assert result.hits.total.value == 3
 
-	# TODO: Clean up unnecessary parts..
-    new_sent_log = AuditLogEntry.objects.all()[0]
-    expired_unsent_log = AuditLogEntry.objects.all()[1]
-    expired_sent_log = AuditLogEntry.objects.all()[2]
+    assert len(result.get("docs")) == 3
 
-    new_sent_log.is_sent = True
-    new_sent_log.save()
-
-    expired_unsent_log.created_at = timezone.now() - timedelta(days=35)
-    expired_unsent_log.save()
-
-    expired_sent_log.is_sent = True
-    expired_sent_log.created_at = timezone.now() - timedelta(days=35)
-    expired_sent_log.save()
-
-    clear_audit_log_entries()
-    assert AuditLogEntry.objects.count() == 2
-    assert AuditLogEntry.objects.filter(id=new_sent_log.id).exists()
-    assert AuditLogEntry.objects.filter(id=expired_unsent_log.id).exists()
+    # Test search
+    
+    result = search_entries_from_elastic_search()
+    print(result)
+    hits = result["hits"]
+    total = hits["total"]
+    value = total["value"]
+    assert value == 3
 
 
 @pytest.mark.django_db
