@@ -38,16 +38,6 @@ _common_fields = {
     }
 }
 
-
-@pytest.mark.django_db
-@override_settings(
-    AUDIT_LOG_ORIGIN="TEST_SERVICE",
-)
-
-
-
-
-
 @pytest.mark.django_db
 @override_settings(
     AUDIT_LOG_ORIGIN="TEST_SERVICE",
@@ -150,45 +140,28 @@ def test_log_additional_information(user):
 @pytest.mark.django_db
 @override_settings(CLEAR_AUDIT_LOG_ENTRIES=True)
 def test_send_audit_log(user, fixed_datetime):
-    audit_logging.log(
-        user,
-        "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
-        Operation.READ,
-        user,
-        get_time=fixed_datetime,
-        ip_address="192.168.1.1",
-    )
-    audit_logging.log(
-        user,
-        "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
-        Operation.READ,
-        user,
-        get_time=fixed_datetime,
-        ip_address="192.168.1.1",
-    )
-    audit_logging.log(
-        user,
-        "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
-        Operation.READ,
-        user,
-        get_time=fixed_datetime,
-        ip_address="192.168.1.1",
-    )
+    addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
+    for addr in addresses:
+        audit_logging.log(
+          user,
+          "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
+          Operation.READ,
+          user,
+          get_time=fixed_datetime,
+          ip_address=addr,
+        )
     assert AuditLogEntry.objects.count() == 3
 	
     ids = send_audit_log_to_elastic_search()
-    print("IDS: ", ids)
     assert len(ids) == 3
     
     result = get_entries_from_elastic_search(ids)
-    print(result)
 
     assert len(result.get("docs")) == 3
 
     # Test search
     
     result = search_entries_from_elastic_search()
-    print(result)
     hits = result["hits"]
     total = hits["total"]
     value = total["value"]
@@ -198,45 +171,30 @@ def test_send_audit_log(user, fixed_datetime):
 @pytest.mark.django_db
 @override_settings(CLEAR_AUDIT_LOG_ENTRIES=True)
 def test_clear_audit_log(user, fixed_datetime):
-    audit_logging.log(
-        user,
-        "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
-        Operation.READ,
-        user,
-        get_time=fixed_datetime,
-        ip_address="192.168.1.1",
-    )
-    audit_logging.log(
-        user,
-        "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
-        Operation.READ,
-        user,
-        get_time=fixed_datetime,
-        ip_address="192.168.1.1",
-    )
-    audit_logging.log(
-        user,
-        "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
-        Operation.READ,
-        user,
-        get_time=fixed_datetime,
-        ip_address="192.168.1.1",
-    )
+    addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
+    for addr in addresses:
+        audit_logging.log(
+          user,
+          "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
+          Operation.READ,
+          user,
+          get_time=fixed_datetime,
+          ip_address=addr
+        )
+    
     assert AuditLogEntry.objects.count() == 3
 
     new_sent_log = AuditLogEntry.objects.all()[0]
     expired_unsent_log = AuditLogEntry.objects.all()[1]
     expired_sent_log = AuditLogEntry.objects.all()[2]
 
-    new_sent_log.is_sent = True
-    new_sent_log.save()
+    new_sent_log.markAsSent()
 
     expired_unsent_log.created_at = timezone.now() - timedelta(days=35)
     expired_unsent_log.save()
 
-    expired_sent_log.is_sent = True
     expired_sent_log.created_at = timezone.now() - timedelta(days=35)
-    expired_sent_log.save()
+    expired_sent_log.markAsSent()
 
     clear_audit_log_entries()
     assert AuditLogEntry.objects.count() == 2
