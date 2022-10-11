@@ -5,6 +5,19 @@ Elasticsearch index. This application takes contents of a single table,
 maps the rows to JSON and transfer this to an Elasticsearch instance.
 
 
+
+## Database model
+
+The database model consists of three fields:
+is_sent: true if the database row has already been sent to elastic (app should write the log with ths set initially to false)
+message: message in read in models.JSONField format
+created_at: time when the message was created
+
+There are two methods to override if changing the is_sent or created_at fields.
+markAsSent() is used for marking the message as sent in db. If using other field name or mechanism than is_sent -field, this needs to be changed.
+
+getUnsentEntries() is used for getting the entries that have not yet been sent to elastic (and should be sent). Returns a list of model instances.
+
 ## Running tests
 
 Prerequisites:
