@@ -81,10 +81,6 @@ env = environ.Env(
     NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
     ALLOWED_HOSTS=(list, []),
     USE_X_FORWARDED_HOST=(bool, False),
-    DATABASE_URL=(
-        str,
-        "sqlite:////db.sqlite3",
-    ),
     ELASTICSEARCH_APP_AUDIT_LOG_INDEX=(str, "app_audit_log"),
     ELASTICSEARCH_HOST=(str, ""),
     ELASTICSEARCH_PORT=(int, 0),
@@ -97,7 +93,8 @@ env = environ.Env(
     AUDIT_TABLE_NAME=(str,"audit_logs"),
     ELASTICSEARCH_SCHEME=(str, "https"),
     DATE_TIME_PARENT_FIELD = (str, "audit_event"),
-    DATE_TIME_FIELD = (str, "date_time")
+    DATE_TIME_FIELD = (str, "date_time"),
+    DATABASE_URL = (str, "")
 )
 
 # Audit logging
@@ -117,9 +114,6 @@ DATE_TIME_FIELD =  env("DATE_TIME_FIELD")
 
 # Sheme for connecting to elastic, for example: "http", or: "https"
 ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
-
-# Database url to read the log data from
-DATABASE_URL=env("DATABASE_URL")
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
