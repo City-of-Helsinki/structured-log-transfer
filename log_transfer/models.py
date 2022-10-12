@@ -24,8 +24,8 @@ class AuditLogEntry(models.Model):
       self.save()
 
     def getTimestamp(self): # TODO: make this configurable xpath style?
-      return self.message["audit_event"]["date_time"]
+      return self.message[settings.DATE_TIME_PARENT_FIELD][settings.DATE_TIME_FIELD]
 
     @staticmethod
-    def getUnsentEntries(): # TODO: make this configurable?
+    def getUnsentEntries():
       return AuditLogEntry.objects.filter(is_sent=False).order_by("created_at")
