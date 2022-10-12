@@ -15,10 +15,12 @@ RUN apt-install.sh \
     && pip install pip-tools \
     && pip-compile requirements.in \
     && pip uninstall -y pip-tools \
+    && pip install mysqlclient \
     && pip install -r /app/requirements.txt \
     && pip cache purge \
     && pip uninstall -y pip \
     && apt-cleanup.sh build-essential
+    
 
 COPY . .
 
