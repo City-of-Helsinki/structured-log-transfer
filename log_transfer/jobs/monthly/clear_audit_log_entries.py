@@ -12,4 +12,9 @@ class Job(MonthlyJob):
 
     def execute(self):
         if settings.CLEAR_AUDIT_LOG_ENTRIES:
+            print("Running clear audit log entries job")
             clear_audit_log_entries()
+            print("Running clear audit log entries job done")
+        else:
+            print("NOT Running clear audit log entries job, CLEAR_AUDIT_LOG_ENTRIES env is set to not run this.")
+            
