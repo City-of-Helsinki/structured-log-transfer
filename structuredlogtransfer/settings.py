@@ -79,7 +79,7 @@ WSGI_APPLICATION = 'structuredlogtransfer.wsgi.application'
 env = environ.Env(
     DEBUG=(bool, False),
     NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
-    ALLOWED_HOSTS=(list, ["*"]),
+    ALLOWED_HOSTS=(list, []),
     USE_X_FORWARDED_HOST=(bool, False),
     DATABASE_URL=(
         str,
