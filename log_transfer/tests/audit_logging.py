@@ -41,11 +41,11 @@ def log(
     role = Role.SYSTEM
     
     message = {
-        "audit_event": {
+        "audit_event": { # See env variable DATE_TIME_PARENT_FIELD if changing this
             "origin": settings.AUDIT_LOG_ORIGIN,
             "status": str(status.value),
             "date_time_epoch": int(current_time.timestamp() * 1000),
-            "date_time": _iso8601_date(current_time),
+            "date_time": _iso8601_date(current_time), # See env variable DATE_TIME_FIELD if changing this
             "actor": {
                 "role": str(role.value),
                 "user_id": user_id,
@@ -76,14 +76,37 @@ def differentKindOfLog(
     current_time = get_time()
     
     message = {
-        "audit_event": { # For this to be different, would need to change AuditLogEntry getTimestamp in models
+        "different_audit_event": { # See env variable DATE_TIME_PARENT_FIELD in tests
             "origin": settings.AUDIT_LOG_ORIGIN,
             "status": str(status.value),
             "epoch_differentkind": int(current_time.timestamp() * 1000),
-            "date_time": _iso8601_date(current_time), # For this to be different, would need to change AuditLogEntry getTimestamp in models
+            "different_date_time": _iso8601_date(current_time), # See env variable DATE_TIME_FIELD in tests
             "somefield": somefield,
             "anotherfield": anotherfield,
         },
+    }
+
+    AuditLogEntry.objects.create(
+        message=message,
+    )
+
+def dateTimeInRootLog(
+    somefield: str,
+    status: Status = Status.SUCCESS,
+    get_time: Callable[[], datetime] = _now,
+    anotherfield: str = "",
+):
+    current_time = get_time()
+    
+    message = {
+        "different_audit_event": {
+            "origin": settings.AUDIT_LOG_ORIGIN,
+            "status": str(status.value),
+            "epoch_differentkind": int(current_time.timestamp() * 1000),
+            "somefield": somefield,
+            "anotherfield": anotherfield,
+        },
+        "date_time": _iso8601_date(current_time), # See env variable DATE_TIME_FIELD in tests
     }
 
     AuditLogEntry.objects.create(

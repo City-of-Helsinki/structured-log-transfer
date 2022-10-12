@@ -111,11 +111,14 @@ ELASTICSEARCH_PASSWORD = env("ELASTICSEARCH_PASSWORD")
 ENABLE_SEND_AUDIT_LOG = env("ENABLE_SEND_AUDIT_LOG")
 AUDIT_TABLE_NAME = env("AUDIT_TABLE_NAME")
 
+# Field names for fetching the elastic timestamp from json data
 DATE_TIME_PARENT_FIELD =  env("DATE_TIME_PARENT_FIELD")
 DATE_TIME_FIELD =  env("DATE_TIME_FIELD")
 
+# Sheme for connecting to elastic, for example: "http", or: "https"
 ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
 
+# Database url to read the log data from
 DATABASE_URL=env("DATABASE_URL")
 
 # Database

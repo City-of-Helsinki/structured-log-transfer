@@ -13,7 +13,8 @@ from log_transfer.tasks import (
     clear_audit_log_entries,
     send_audit_log_to_elastic_search,
     get_entries_from_elastic_search,
-    search_entries_from_elastic_search
+    search_entries_from_elastic_search,
+    delete_elastic_index
 )
 
 
@@ -167,6 +168,15 @@ def test_send_audit_log(user, fixed_datetime):
     value = total["value"]
     assert value == 3
 
+
+@pytest.mark.django_db
+@override_settings(DATE_TIME_PARENT_FIELD="different_audit_event", DATE_TIME_FIELD="different_date_time")
+def test_send_different_audit_log(user, fixed_datetime):
+
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     # Create another kind of log, this is in the same test to prevent
     # conflicting ids in database to be sent to elastic
 
@@ -177,7 +187,7 @@ def test_send_audit_log(user, fixed_datetime):
           anotherfield="another "+data,
         )
 
-    assert AuditLogEntry.objects.count() == 6
+    assert AuditLogEntry.objects.count() == 3 # 3 instances in db as db was cleaned up
 
     ids = send_audit_log_to_elastic_search()
     assert len(ids) == 3
@@ -192,7 +202,43 @@ def test_send_audit_log(user, fixed_datetime):
     hits = result["hits"]
     total = hits["total"]
     value = total["value"]
-    assert value == 6 # Search will find also the previous ones
+    assert value == 3 # Search will find only the ones from this test, as index was deleted
+
+
+@pytest.mark.django_db
+@override_settings(DATE_TIME_PARENT_FIELD=None, DATE_TIME_FIELD="date_time")
+def test_send_timestamp_in_root(user, fixed_datetime):
+
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
+    # Create another kind of log, this is in the same test to prevent
+    # conflicting ids in database to be sent to elastic
+
+    somedata = ["a", "b", "c"]
+    for data in somedata:
+        audit_logging.dateTimeInRootLog(
+          somefield=data,
+          anotherfield="another "+data,
+        )
+
+    assert AuditLogEntry.objects.count() == 3 # 3 instances in db as db was cleaned up
+
+    ids = send_audit_log_to_elastic_search()
+    assert len(ids) == 3
+
+    result = get_entries_from_elastic_search(ids)
+
+    assert len(result.get("docs")) == 3 # Only 3 ids were created
+
+    # Test search
+
+    result = search_entries_from_elastic_search()
+    hits = result["hits"]
+    total = hits["total"]
+    value = total["value"]
+    assert value == 3 # Search will find only the ones from this test, as index was deleted
 
 
 @pytest.mark.django_db
