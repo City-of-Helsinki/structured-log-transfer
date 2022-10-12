@@ -52,5 +52,10 @@ AUDIT_TABLE_NAME          | str          | "audit_logs"                 | table 
 ELASTICSEARCH_SCHEME      | str          | "https"                      | Scheme for connecting to elastic
 DATE_TIME_PARENT_FIELD    | str          | "audit_event"                | Field name for parent object for fetching the elastic timestamp from json data. If unset, will search from root
 DATE_TIME_FIELD           | str          | "date_time"                  | Field name for fetching the elastic timestamp from json data
+DB_USE_SSL                | bool         | False                        | Attempt to append ssl settings to the database config if set to True
+SSL_CA                    | str          | ""                           | Database SSL-CA cert path 
+SSL_KEY                   | str          | ""                           | Database ssl-key client key path
+SSL_CERT                  | str          | ""                           | Database ssl-cert path
+SSL_CIPHER                | str          | ""                           | Database ssl-cipher
 
 See https://django-environ.readthedocs.io/en/latest/types.html#environ-env-db-url for possibilitied on setting the database url.
