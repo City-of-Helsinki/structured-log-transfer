@@ -94,7 +94,12 @@ env = environ.Env(
     ELASTICSEARCH_SCHEME=(str, "https"),
     DATE_TIME_PARENT_FIELD = (str, "audit_event"),
     DATE_TIME_FIELD = (str, "date_time"),
-    DATABASE_URL = (str, "")
+    DATABASE_URL = (str, ""),
+    DB_USE_SSL = (bool, False),
+    SSL_CA = (str, ""),
+    SSL_KEY = (str, ""),
+    SSL_CERT = (str, ""),
+    SSL_CIPHER = (str, "")
 )
 
 # Audit logging
@@ -118,10 +123,26 @@ ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    'default': env.db()
-}
+dbenv=env.db()
 
+if (env("DB_USE_SSL")):
+  SSL_OPTS= {
+     'OPTIONS': {
+            'ssl': {
+                'ssl-ca': env("SSL_CA"),
+                'key': env("SSL_KEY"),
+                'cert': env("SSL_CERT"),
+                'cipher': env("SSL_CIPHER") 
+            }
+        }
+  }
+  DATABASES = {
+    'default': {**dbenv,  **SSL_OPTS}
+  }
+else:
+  DATABASES = {
+    'default': dbenv
+  }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
