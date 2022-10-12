@@ -38,7 +38,7 @@ Env variables
 name                      | type         |         default              | description
 ------------------------- | ------------ | -----------------            |-------------------------------------------------
 DEBUG                     | bool         | False                        | If set to true will print more log
-DATABASE_URL              | str          |"postgres:///structuredlogs"  | Set up for database connection for reading log entries from
+DATABASE_URL              | str          |"postgres:///structuredlogs"  | Set up for database connection for reading log entries from, see 
 ELASTICSEARCH_APP_AUDIT_LOG_INDEX | str  | "app_audit_log"              | Index to write to
 ELASTICSEARCH_HOST        | str          | ""                           | Elastic host name to write to
 ELASTICSEARCH_PORT        | int          | 0                            | Elastic port to write to
@@ -52,3 +52,5 @@ AUDIT_TABLE_NAME          | str          | "audit_logs"                 | table 
 ELASTICSEARCH_SCHEME      | str          | "https"                      | Scheme for connecting to elastic
 DATE_TIME_PARENT_FIELD    | str          | "audit_event"                | Field name for parent object for fetching the elastic timestamp from json data. If unset, will search from root
 DATE_TIME_FIELD           | str          | "date_time"                  | Field name for fetching the elastic timestamp from json data
+
+See https://django-environ.readthedocs.io/en/latest/types.html#environ-env-db-url for possibilitied on setting the database url.

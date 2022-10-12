@@ -83,7 +83,7 @@ env = environ.Env(
     USE_X_FORWARDED_HOST=(bool, False),
     DATABASE_URL=(
         str,
-        "postgres:///structuredlogs",
+        "sqlite:////db.sqlite3",
     ),
     ELASTICSEARCH_APP_AUDIT_LOG_INDEX=(str, "app_audit_log"),
     ELASTICSEARCH_HOST=(str, ""),
@@ -125,10 +125,7 @@ DATABASE_URL=env("DATABASE_URL")
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db()
 }
 
 
