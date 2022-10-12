@@ -35,19 +35,20 @@ You can see the elastic.log for elastic log output if necessary.
 ## Configuring
 
 Env variables
-name type default description
-DEBUG bool False If set to true will print more log
-DATABASE_URL str "postgres:///structuredlogs" Set up for database connection for reading log entries from
-ELASTICSEARCH_APP_AUDIT_LOG_INDEX str "app_audit_log" Index to write to
-ELASTICSEARCH_HOST str "" Elastic host name to write to
-ELASTICSEARCH_PORT int 0 Elastic port to write to
-ELASTICSEARCH_USERNAME str "" User name for auth
-ELASTICSEARCH_PASSWORD str "" password for auth
-CLEAR_AUDIT_LOG_ENTRIES bool False set to True to clear audit log entries each month (Remember to also call the monthly job, monthly!)
-ENABLE_SEND_AUDIT_LOG bool True set to False to not send anything to elastic
-DB_PREFIX str "" 
-AUDIT_LOG_ORIGIN str "" Origin to write to elastic with the audit log entry
-AUDIT_TABLE_NAME str "audit_logs" table name to read the logs from
-ELASTICSEARCH_SCHEME str "https" Scheme for connecting to elastic
-DATE_TIME_PARENT_FIELD str "audit_event" Field name for parent object for fetching the elastic timestamp from json data. If unset, will search from root
-DATE_TIME_FIELD = str "date_time" Field name for fetching the elastic timestamp from json data
+name                      | type         |         default              | description
+------------------------- | ------------ | -----------------            |-------------------------------------------------
+DEBUG                     | bool         | False                        | If set to true will print more log
+DATABASE_URL              | str          |"postgres:///structuredlogs"  | Set up for database connection for reading log entries from
+ELASTICSEARCH_APP_AUDIT_LOG_INDEX | str  | "app_audit_log"              | Index to write to
+ELASTICSEARCH_HOST        | str          | ""                           | Elastic host name to write to
+ELASTICSEARCH_PORT        | int          | 0                            | Elastic port to write to
+ELASTICSEARCH_USERNAME    | str          | ""                           | User name for auth
+ELASTICSEARCH_PASSWORD    | str          | ""                           | password for auth
+CLEAR_AUDIT_LOG_ENTRIES   | bool         | False                        | set to True to clear audit log entries each month (Remember to also call the monthly job, monthly!)
+ENABLE_SEND_AUDIT_LOG     | bool         | True                         | set to False to not send anything to elastic
+DB_PREFIX                 | str          | ""                           | 
+AUDIT_LOG_ORIGIN          | str          | ""                           | Origin to write to elastic with the audit log entry
+AUDIT_TABLE_NAME          | str          | "audit_logs"                 | table name to read the logs from
+ELASTICSEARCH_SCHEME      | str          | "https"                      | Scheme for connecting to elastic
+DATE_TIME_PARENT_FIELD    | str          | "audit_event"                | Field name for parent object for fetching the elastic timestamp from json data. If unset, will search from root
+DATE_TIME_FIELD           | str          | "date_time"                  | Field name for fetching the elastic timestamp from json data
