@@ -67,6 +67,28 @@ def log(
         message=message,
     )
 
+def differentKindOfLog(
+    somefield: str,
+    status: Status = Status.SUCCESS,
+    get_time: Callable[[], datetime] = _now,
+    anotherfield: str = "",
+):
+    current_time = get_time()
+    
+    message = {
+        "audit_event": { # For this to be different, would need to change AuditLogEntry getTimestamp in models
+            "origin": settings.AUDIT_LOG_ORIGIN,
+            "status": str(status.value),
+            "epoch_differentkind": int(current_time.timestamp() * 1000),
+            "date_time": _iso8601_date(current_time), # For this to be different, would need to change AuditLogEntry getTimestamp in models
+            "somefield": somefield,
+            "anotherfield": anotherfield,
+        },
+    }
+
+    AuditLogEntry.objects.create(
+        message=message,
+    )
 
 
 def _get_target_id(target: Union[Model, ModelBase]) -> Optional[str]:

@@ -151,21 +151,48 @@ def test_send_audit_log(user, fixed_datetime):
           ip_address=addr,
         )
     assert AuditLogEntry.objects.count() == 3
-	
+
     ids = send_audit_log_to_elastic_search()
     assert len(ids) == 3
-    
+
     result = get_entries_from_elastic_search(ids)
 
     assert len(result.get("docs")) == 3
 
     # Test search
-    
+
     result = search_entries_from_elastic_search()
     hits = result["hits"]
     total = hits["total"]
     value = total["value"]
     assert value == 3
+
+    # Create another kind of log, this is in the same test to prevent
+    # conflicting ids in database to be sent to elastic
+
+    somedata = ["a", "b", "c"]
+    for data in somedata:
+        audit_logging.differentKindOfLog(
+          somefield=data,
+          anotherfield="another "+data,
+        )
+
+    assert AuditLogEntry.objects.count() == 6
+
+    ids = send_audit_log_to_elastic_search()
+    assert len(ids) == 3
+
+    result = get_entries_from_elastic_search(ids)
+
+    assert len(result.get("docs")) == 3 # Only 3 ids were created
+
+    # Test search
+
+    result = search_entries_from_elastic_search()
+    hits = result["hits"]
+    total = hits["total"]
+    value = total["value"]
+    assert value == 6 # Search will find also the previous ones
 
 
 @pytest.mark.django_db
@@ -181,7 +208,7 @@ def test_clear_audit_log(user, fixed_datetime):
           get_time=fixed_datetime,
           ip_address=addr
         )
-    
+
     assert AuditLogEntry.objects.count() == 3
 
     new_sent_log = AuditLogEntry.objects.all()[0]

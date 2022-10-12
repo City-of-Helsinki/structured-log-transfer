@@ -29,8 +29,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# If set to true, will clear audit log entries every month
 CLEAR_AUDIT_LOG_ENTRIES = True
-
 
 # Application definition
 

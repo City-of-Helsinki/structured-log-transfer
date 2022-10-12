@@ -18,11 +18,14 @@ class AuditLogEntry(models.Model):
                 "Created at: " + str(self.created_at)
             ]
         )
-        
+
     def markAsSent(self):
       self.is_sent = True
       self.save()
-    
+
+    def getTimestamp(self): # TODO: make this configurable xpath style?
+      return self.message["audit_event"]["date_time"]
+
     @staticmethod
-    def getUnsentEntries():
+    def getUnsentEntries(): # TODO: make this configurable?
       return AuditLogEntry.objects.filter(is_sent=False).order_by("created_at")

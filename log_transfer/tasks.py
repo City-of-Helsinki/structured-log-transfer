@@ -40,9 +40,7 @@ def send_audit_log_to_elastic_search():
     
     for entry in entries:
         message_body = entry.message.copy()
-        message_body["@timestamp"] = entry.message["audit_event"][
-            "date_time"
-        ]  # required by ES
+        message_body["@timestamp"] = entry.getTimestamp()  # required by ES
         rs = es.index(
             index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX,
             id=entry.id,
