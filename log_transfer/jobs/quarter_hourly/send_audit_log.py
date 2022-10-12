@@ -13,5 +13,5 @@ class Job(QuarterHourlyJob):
             send_audit_log_to_elastic_search()
             print("Send audit log to elastic done.")
         else:
-            print("NOT running send audit log to elastic, ENABLE_SEND_AUDIT_LOG is set to " + settings.ENABLE_SEND_AUDIT_LOG +  " .")
+            print("NOT running send audit log to elastic, ENABLE_SEND_AUDIT_LOG is set to " + str(settings.ENABLE_SEND_AUDIT_LOG) +  " .")
             
