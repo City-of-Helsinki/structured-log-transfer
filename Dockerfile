@@ -11,8 +11,10 @@ RUN apt-install.sh \
         libpq-dev \
         build-essential \
         gettext \
+        libmariadb-dev \
     && pip install -U pip \
     && pip install pip-tools \
+    && pip install mysqlclient \
     && pip-compile requirements.in \
     && pip uninstall -y pip-tools \
     && pip install -r /app/requirements.txt \
