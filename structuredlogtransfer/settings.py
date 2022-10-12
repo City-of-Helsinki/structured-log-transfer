@@ -126,14 +126,19 @@ ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
 dbenv=env.db()
 
 if (env("DB_USE_SSL")):
+  ssl_subpart = {}
+  if (env("SSL_CA")):
+    ssl_subpart['ssl-ca'] = env("SSL_CA")
+  if (env("SSL_KEY")):
+    ssl_subpart['key'] = env("SSL_KEY")
+  if (env("SSL_CERT")):
+    ssl_subpart['cert'] = env("SSL_CERT")
+  if (env("SSL_CIPHER")):
+    ssl_subpart['cipher'] = env("SSL_CIPHER")
+  
   SSL_OPTS= {
      'OPTIONS': {
-            'ssl': {
-                'ssl-ca': env("SSL_CA"),
-                'key': env("SSL_KEY"),
-                'cert': env("SSL_CERT"),
-                'cipher': env("SSL_CIPHER") 
-            }
+            'ssl': ssl_subpart
         }
   }
   DATABASES = {
