@@ -77,14 +77,22 @@ Configure the MySQL example above, then to use SSL using ca cert from `https://w
 ### MySQL create minimal table and insert test data into it
 
 Connect to database
-`mysql -h host.domain.root -D databasename -u user`
+```shell
+mysql -h host.domain.root -D databasename -u user
+```
 
 Create database table
-`CREATE TABLE audit_logging (`
-`    id int,`
-`    is_sent BOOLEAN,`
-`    message JSON,`
-`    created_at TIMESTAMP`
-`);`
+```sql
+CREATE TABLE audit_logging (
+    id int,
+    is_sent BOOLEAN,
+    message JSON,
+    created_at TIMESTAMP
+);
+```
 
-Insert test data row into table: `INSERT INTO audit_logging(id, is_sent, message, created_at) VALUES (1, 0, '{"audit_event": {"date_time": "2022-10-13T12:34:56.000Z"}}', now());`
+Insert test data row into table: 
+```sql
+INSERT INTO audit_logging(id, is_sent, message, created_at) 
+VALUES (1, 0, '{"audit_event": {"date_time": "2022-10-13T12:34:56.000Z"}}', now());
+```
