@@ -72,7 +72,7 @@ To read from `databasename.tablename` on mysql server `host.domain.root` port `1
 Configure the MySQL example above, then to use SSL using ca cert from `https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem`
 - Set DB_USE_SSL env variable to True
 - Set SSL_CA to `certs/BaltimoreCyberTrustRoot.crt.pem`
-- Include ```dockerfile ADD --chown=appuser:appuser https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem certs/``` to Dockerfile and build, alternatively map file or path when running the container
+- Include ` ADD --chown=appuser:appuser https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem certs/` to Dockerfile and build, alternatively map file or path when running the container
 
 ### MySQL create minimal table and insert test data into it
 
