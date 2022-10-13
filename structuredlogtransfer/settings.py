@@ -95,6 +95,7 @@ env = environ.Env(
     DATE_TIME_PARENT_FIELD = (str, "audit_event"),
     DATE_TIME_FIELD = (str, "date_time"),
     DATABASE_URL = (str, ""),
+    DATABASE_PASSWORD = (str, ""),
     DB_USE_SSL = (bool, False),
     SSL_CA = (str, ""),
     SSL_KEY = (str, ""),
@@ -152,6 +153,10 @@ else:
 forLog = DATABASES.copy()
 forLog["default"]["PASSWORD"]=""
 print("Database config:", forLog)
+
+if (env("DATABASE_PASSWORD")):
+  forLog["default"]["PASSWORD"]=env("DATABASE_PASSWORD")
+  
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
