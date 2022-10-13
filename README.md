@@ -59,3 +59,17 @@ SSL_CERT                  | str          | ""                           | Databa
 SSL_CIPHER                | str          | ""                           | Database ssl-cipher
 
 See https://django-environ.readthedocs.io/en/latest/types.html#environ-env-db-url for possibilitied on setting the database url.
+
+## Configuration examples
+
+### MySQL
+To read from `databasename.tablename` on mysql server `host.domain.root` port `1234` using `user`:
+- Set DATABASE_URL to `mysql://user@host.domain.root:1234/databasename`
+- Set DATABASE_PASSWORD env variable
+- Set AUDIT_TABLE_NAME to `tablename`
+
+### MySQL SSL
+Configure the MySQL example above, then to use SSL using ca cert from `https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem`
+- Set DB_USE_SSL env variable to True
+- Set SSL_CA to `certs/BaltimoreCyberTrustRoot.crt.pem`
+- Include `ADD --chown=appuser:appuser https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem certs/` to Dockerfile and build, alternatively map file or path when running the container
