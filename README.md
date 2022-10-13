@@ -73,3 +73,18 @@ Configure the MySQL example above, then to use SSL using ca cert from `https://w
 - Set DB_USE_SSL env variable to True
 - Set SSL_CA to `certs/BaltimoreCyberTrustRoot.crt.pem`
 - Include `ADD --chown=appuser:appuser https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem certs/` to Dockerfile and build, alternatively map file or path when running the container
+
+### MySQL create minimal table and insert test data into it
+
+Connect to database
+`mysql -h host.domain.root -D databasename -u user`
+
+Create database table
+`CREATE TABLE audit_logging (`
+`    id int,`
+`    is_sent BOOLEAN,`
+`    message JSON,`
+`    created_at TIMESTAMP`
+`);`
+
+Insert test data row into table: `INSERT INTO audit_logging(id, is_sent, message, created_at) VALUES (1, 0, '{"audit_event": {"date_time": "2022-10-13T12:34:56.000Z"}}', now());`
