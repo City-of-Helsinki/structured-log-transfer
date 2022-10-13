@@ -150,7 +150,7 @@ else:
   }
 
 forLog = DATABASES.copy()
-forLog["default"]["password"]=""
+forLog["default"]["PASSWORD"]=""
 print("Database config:", forLog)
 
 # Password validation
