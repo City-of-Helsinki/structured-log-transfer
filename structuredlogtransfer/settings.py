@@ -149,6 +149,10 @@ else:
     'default': dbenv
   }
 
+forLog = DATABASES.copy()
+forLog["default"]["password"]=""
+print("Database config:", forLog)
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
