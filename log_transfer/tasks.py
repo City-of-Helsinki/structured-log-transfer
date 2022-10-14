@@ -35,9 +35,12 @@ def init():
 
 def send_audit_log_to_elastic_search():
     es=init()
+    if es == None:
+      return
+
     entries = AuditLogEntry.getUnsentEntries()
     resultids=[]
-    
+
     for entry in entries:
         message_body = entry.message.copy()
         message_body["@timestamp"] = entry.getTimestamp()  # required by ES
@@ -48,7 +51,7 @@ def send_audit_log_to_elastic_search():
             op_type="create",
         )
         LOGGER.info("Sending status: ", rs)
-        
+
         if rs.get("result") == ES_STATUS_CREATED:
             entry.markAsSent()
             resultids.append(rs.get("_id"))
@@ -57,40 +60,24 @@ def send_audit_log_to_elastic_search():
 # Used for tests only
 def search_entries_from_elastic_search():
     es=init()
-  
+    if es == None:
+        return
+
     LOGGER.info("Search: ", settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
-    
+
     # Index needs a refresh for the search to work this quickly
     es.indices.refresh(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
 
     rs = es.search(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX, query={"match_all": {}})
     LOGGER.info("Search result: ", rs)
-    return rs    
-    
+    return rs
+
 # Used for tests only
 def get_entries_from_elastic_search(idlist):
-    if not (
-        settings.ELASTICSEARCH_HOST
-        and settings.ELASTICSEARCH_PORT
-        and settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX
-      #  and settings.ELASTICSEARCH_USERNAME
-      #  and settings.ELASTICSEARCH_PASSWORD
-    ):
-        LOGGER.warning(
-            "Trying to send audit log to Elasticsearch without proper configuration, process skipped"
-        )
+    es=init()
+    if es == None:
         return
-    es = Elasticsearch(
-        [
-            {
-                "host": settings.ELASTICSEARCH_HOST,
-                "port": settings.ELASTICSEARCH_PORT,
-                "scheme": settings.ELASTICSEARCH_SCHEME
-            }
-        ],
-        basic_auth=(settings.ELASTICSEARCH_USERNAME, settings.ELASTICSEARCH_PASSWORD),
-    )
-  
+
     LOGGER.info("Getting from : ", settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
     rs = es.mget(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX, ids=idlist)
     print("Result: ", rs)
@@ -99,6 +86,8 @@ def get_entries_from_elastic_search(idlist):
 # Used for tests only
 def delete_elastic_index():
     es=init()
+    if es == None:
+        return
     es.indices.delete(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
 
 
