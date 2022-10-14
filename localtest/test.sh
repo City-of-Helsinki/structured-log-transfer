@@ -31,6 +31,9 @@ echo see elastic.log for elasticsearch output
 #Run the test, will wait for the elastic to be available before testing
 docker run --env-file localtest/testenvs.txt --pod structuredlogtest localhost/structured-log-transfer-test || echo Test failed
 
+#Run the test with different kind of settings
+docker run --env-file localtest/testenvs2.txt --pod structuredlogtest localhost/structured-log-transfer-test || echo Test failed
+
 #Stop and clean up
 docker stop $elasticcontainer
 docker container rm $elasticcontainer

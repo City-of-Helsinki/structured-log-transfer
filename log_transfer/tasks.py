@@ -88,7 +88,7 @@ def delete_elastic_index():
     es=init()
     if es == None:
         return
-    es.indices.delete(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
+    es.options(ignore_status=[404]).indices.delete(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
 
 
 def clear_audit_log_entries(days_to_keep=30):

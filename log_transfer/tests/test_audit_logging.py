@@ -141,6 +141,11 @@ def test_log_additional_information(user):
 @pytest.mark.django_db
 @override_settings(CLEAR_AUDIT_LOG_ENTRIES=True)
 def test_send_audit_log(user, fixed_datetime):
+
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
     for addr in addresses:
         audit_logging.log(
