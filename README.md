@@ -40,15 +40,15 @@ name                      | type         |         default              | descri
 DEBUG                     | bool         | False                        | If set to true will print more log
 DATABASE_URL              | str          |"postgres:///structuredlogs"  | Set up for database connection for reading log entries from, see 
 ELASTICSEARCH_APP_AUDIT_LOG_INDEX | str  | "app_audit_log"              | Index to write to
-ELASTICSEARCH_HOST        | str          | ""                           | Elastic host name to write to
-ELASTICSEARCH_PORT        | int          | 0                            | Elastic port to write to
+ELASTICSEARCH_HOST        | str          | ""                           | Elastic host name to write to. You can also include port separated by colon.
+ELASTICSEARCH_PORT        | int          | 0                            | Elastic port to write to. This can be also given as part of the host.
 ELASTICSEARCH_USERNAME    | str          | ""                           | User name for auth
-ELASTICSEARCH_PASSWORD    | str          | ""                           | password for auth
-CLEAR_AUDIT_LOG_ENTRIES   | bool         | False                        | set to True to clear audit log entries each month (Remember to also call the monthly job, monthly!)
-ENABLE_SEND_AUDIT_LOG     | bool         | True                         | set to False to not send anything to elastic
+ELASTICSEARCH_PASSWORD    | str          | ""                           | Password for auth
+CLEAR_AUDIT_LOG_ENTRIES   | bool         | True                         | Clear audit log entries each month when  monthly job is run. Set to False to disable this functionality even when running the monthly job.
+ENABLE_SEND_AUDIT_LOG     | bool         | True                         | Set to False to not send anything to elastic
 DB_PREFIX                 | str          | ""                           | 
 AUDIT_LOG_ORIGIN          | str          | ""                           | Origin to write to elastic with the audit log entry
-AUDIT_TABLE_NAME          | str          | "audit_logs"                 | table name to read the logs from
+AUDIT_TABLE_NAME          | str          | "audit_logs"                 | Table name to read the logs from
 ELASTICSEARCH_SCHEME      | str          | "https"                      | Scheme for connecting to elastic
 DATE_TIME_PARENT_FIELD    | str          | "audit_event"                | Field name for parent object for fetching the elastic timestamp from json data. If unset, will search from root
 DATE_TIME_FIELD           | str          | "date_time"                  | Field name for fetching the elastic timestamp from json data
@@ -61,6 +61,20 @@ SSL_CIPHER                | str          | ""                           | Databa
 See https://django-environ.readthedocs.io/en/latest/types.html#environ-env-db-url for possibilitied on setting the database url.
 
 ## Configuration examples
+
+### Elasticsearch
+To connect to `https` port `443` on host `host`
+
+- Set ELASTICSEARCH_HOST to `host`
+- Set ELASTICSEARCH_PORT to `443`
+- Set ELASTICSEARCH_SCHEME to `https`
+
+### Elasticsearch alternate way
+To connect to `https` port `443` on host `host`
+
+- Set ELASTICSEARCH_HOST to `host:443`
+- Set ELASTICSEARCH_PORT to `0` or leave it unset.
+- Set ELASTICSEARCH_SCHEME to `https`
 
 ### MySQL
 To read from `databasename.tablename` on mysql server `host.domain.root` port `1234` using `user`:
