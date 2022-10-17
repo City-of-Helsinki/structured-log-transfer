@@ -19,7 +19,10 @@ def init():
        # and settings.ELASTICSEARCH_PASSWORD
     ):
         LOGGER.warning(
-            "Trying to send audit log to Elasticsearch without proper configuration, process skipped"
+            "Trying to use Elasticsearch without proper configuration, process skipped. Host: " + 
+            str(settings.ELASTICSEARCH_HOST) + ", Port: " +
+            str(settings.ELASTICSEARCH_PORT) + ", Index: " +
+            str(settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
         )
         return
     return Elasticsearch(
