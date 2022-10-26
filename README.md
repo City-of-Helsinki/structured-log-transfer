@@ -97,7 +97,7 @@ mysql -h host.domain.root -D databasename -u user
 
 Create database table
 ```sql
-CREATE TABLE audit_logging (
+CREATE TABLE audit_logs (
     id int,
     is_sent BOOLEAN,
     message JSON,
@@ -107,6 +107,35 @@ CREATE TABLE audit_logging (
 
 Insert test data row into table: 
 ```sql
-INSERT INTO audit_logging(id, is_sent, message, created_at) 
+INSERT INTO audit_logs(id, is_sent, message, created_at) 
 VALUES (1, 0, '{"audit_event": {"date_time": "2022-10-13T12:34:56.000Z"}}', now());
+```
+
+### PostgreSQL
+To read from `databasename.tablename` on postgresql server `host.domain.root` port `1234` using `user`:
+- Set DATABASE_URL to `postgres://user:password@host.domain.root:1234/databasename?sslmode=require`
+- Set AUDIT_TABLE_NAME to `tablename`
+
+
+### PostgreSQL create minimal table and insert test data into it
+
+Connect to database
+```shell
+psql postgres://user:password@databasehost.domain.root:1234/databasename?sslmode=require
+```
+
+Create database table
+```sql
+CREATE TABLE audit_logs (
+    id int,
+    is_sent BOOLEAN,
+    message JSONB,
+    created_at TIMESTAMP
+);
+```
+
+Insert test data row into table: 
+```sql
+INSERT INTO audit_logs(id, is_sent, message, created_at) 
+VALUES (1, false, '{"audit_event": {"date_time": "2022-10-13T12:34:56.000Z"}}', now());
 ```
