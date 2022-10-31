@@ -162,8 +162,12 @@ forLog = DATABASES.copy()
 forLog["default"]["PASSWORD"]=""
 print("Database config:", forLog)
 
-if (env("DATABASE_PASSWORD")):
+if DATABASES["default"]["PASSWORD"]:
+  print("DB Password is set from db url")
+
+if env("DATABASE_PASSWORD"):
   DATABASES["default"]["PASSWORD"]=env("DATABASE_PASSWORD")
+  print("Set password from DATABASE_PASSWORD env")
 
 # Replace the gis versions of db engines with regular ones, not used when reading logs even if the project otherwise uses these.
 if "ENGINE" in DATABASES["default"]:
