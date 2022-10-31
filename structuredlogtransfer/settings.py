@@ -163,10 +163,6 @@ if "PASSWORD" in DATABASES["default"] and DATABASES["default"]["PASSWORD"]:
 else:
   print("DB Password is not set from db url")
 
-forLog = DATABASES.copy()
-forLog["default"]["PASSWORD"]=""
-print("Database config:", forLog)
-
 if env("DATABASE_PASSWORD"):
   DATABASES["default"]["PASSWORD"]=env("DATABASE_PASSWORD")
   print("Set password from DATABASE_PASSWORD env")
