@@ -158,16 +158,20 @@ else:
     'default': dbenv
   }
 
+if "PASSWORD" in DATABASES["default"] and DATABASES["default"]["PASSWORD"]:
+  print("DB Password is set from db url")
+else:
+  print("DB Password is not set from db url")
+
 forLog = DATABASES.copy()
 forLog["default"]["PASSWORD"]=""
 print("Database config:", forLog)
 
-if DATABASES["default"]["PASSWORD"]:
-  print("DB Password is set from db url")
-
 if env("DATABASE_PASSWORD"):
   DATABASES["default"]["PASSWORD"]=env("DATABASE_PASSWORD")
   print("Set password from DATABASE_PASSWORD env")
+else:
+  print("Password not set from DATABASE_PASSWORD env")
 
 # Replace the gis versions of db engines with regular ones, not used when reading logs even if the project otherwise uses these.
 if "ENGINE" in DATABASES["default"]:
