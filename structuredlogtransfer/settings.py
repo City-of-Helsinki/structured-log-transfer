@@ -164,7 +164,15 @@ print("Database config:", forLog)
 
 if (env("DATABASE_PASSWORD")):
   DATABASES["default"]["PASSWORD"]=env("DATABASE_PASSWORD")
-  
+
+# Replace the gis versions of db engines with regular ones, not used when reading logs even if the project otherwise uses these.
+if "ENGINE" in DATABASES["default"]:
+  if DATABASES["default"]["ENGINE"] == "django.contrib.gis.db.backends.postgis":
+    DATABASES["default"]["ENGINE"]="django.db.backends.postgresql"
+
+  if DATABASES["default"]["ENGINE"] == "django.contrib.gis.db.backends.mysql":
+    DATABASES["default"]["ENGINE"]="django.db.backends.mysql"
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
