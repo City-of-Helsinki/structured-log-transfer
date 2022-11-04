@@ -137,5 +137,5 @@ CREATE TABLE audit_logs (
 Insert test data row into table: 
 ```sql
 INSERT INTO audit_logs(id, is_sent, message, created_at) 
-VALUES (1, false, '{"audit_event": {"date_time": "2022-10-13T12:34:56.000Z"}}', now());
+VALUES (1, false, '{"audit_event": {"date_time": "2022-10-13T12:34:56.000+0300"}}', now());
 ```
