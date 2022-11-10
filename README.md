@@ -130,7 +130,7 @@ CREATE TABLE audit_logs (
     id int,
     is_sent BOOLEAN,
     message JSONB,
-    created_at TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE
 );
 ```
 
