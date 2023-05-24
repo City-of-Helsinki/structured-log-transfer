@@ -37,7 +37,7 @@ services:
       ELASTICSEARCH_SCHEME: "http"
       DATABASE_URL: "postgres://user:password@structured-log-transfer-postgres/databasename"
       DJANGO_SETTINGS_MODULE: "structuredlogtransfer.settings"
-      USE_DJANGO_AUDITLOG: 1
+      AUDIT_LOGGER_TYPE: "DJANGO_AUDITLOG"  # enables testing for django_auditlog
     depends_on:
       - structured-log-transfer-postgres
       - elasticsearch-for-structured-log-transfer-test
@@ -59,7 +59,7 @@ services:
       ELASTICSEARCH_SCHEME: "http"
       DATABASE_URL: "postgres://user:password@structured-log-transfer-postgres/databasename"
       DJANGO_SETTINGS_MODULE: "structuredlogtransfer.settings"
-      USE_DJANGO_AUDITLOG: 1
+      AUDIT_LOGGER_TYPE: "DJANGO_AUDITLOG"  # enables testing for django_auditlog
     depends_on:
       - structured-log-transfer-postgres
       - elasticsearch-for-structured-log-transfer-test

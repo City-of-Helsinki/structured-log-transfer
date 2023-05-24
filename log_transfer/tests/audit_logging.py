@@ -12,6 +12,7 @@ from elastic_transport import ObjectApiResponse
 from log_transfer.enums import Operation, Role, Status
 from log_transfer.models import AuditLogEntry
 from log_transfer.tasks import LOGGER, init
+from structuredlogtransfer.settings import AuditLoggerType
 
 # In this module for testing purposes only.
 
@@ -37,30 +38,12 @@ def log(
     get_time: Callable[[], datetime] = _now,
     ip_address: str = "",
     additional_information: str = "",
-    use_django_auditlog: bool = False,
+    audit_logger_type: AuditLoggerType = AuditLoggerType.SINGLE_COLUMN_JSON,
 ):
     current_time = get_time()
 
-    if use_django_auditlog:
-        from auditlog.models import LogEntry
-
-        LogEntry.objects.create(
-            content_type=ContentType.objects.get_for_model(actor),
-            object_pk=str(actor.pk),
-            object_id=actor.id,
-            serialized_data=None,
-            actor=actor,
-            additional_data={"is_sent": False, "ip_address": ip_address},
-            action=LogEntry.Action.CREATE,
-            timestamp=current_time,
-            changes={"username": [None, actor.username]},
-        )
-
-    else:
+    if audit_logger_type == AuditLoggerType.SINGLE_COLUMN_JSON:
         user_id = str(actor.pk) if getattr(actor, "pk", None) else ""
-
-        role = Role.SYSTEM
-
         message = {
             "audit_event": { # See env variable DATE_TIME_PARENT_FIELD if changing this
                 "origin": settings.AUDIT_LOG_ORIGIN,
@@ -68,7 +51,7 @@ def log(
                 "date_time_epoch": int(current_time.timestamp() * 1000),
                 "date_time": _iso8601_date(current_time), # See env variable DATE_TIME_FIELD if changing this
                 "actor": {
-                    "role": str(role.value),
+                    "role": str(Role.SYSTEM.value),
                     "user_id": user_id,
                     "provider": actor_backend
                     if actor_backend
@@ -87,6 +70,26 @@ def log(
         AuditLogEntry.objects.create(
             message=message,
         )
+
+    elif audit_logger_type == AuditLoggerType.DJANGO_AUDITLOG:
+        from auditlog.models import LogEntry
+
+        LogEntry.objects.create(
+            content_type=ContentType.objects.get_for_model(actor),
+            object_pk=str(actor.pk),
+            object_id=actor.id,
+            serialized_data=None,
+            actor=actor,
+            additional_data={"is_sent": False, "ip_address": ip_address},
+            action=LogEntry.Action.CREATE,
+            timestamp=current_time,
+            changes={"username": [None, actor.username]},
+        )
+
+    # Should never happen, but just in case
+    else:
+        raise RuntimeError("Unknown audit logger type set.")
+
 
 def differentKindOfLog(
     somefield: str,
@@ -156,14 +159,14 @@ def search_entries_from_elastic_search() -> Optional[ObjectApiResponse]:
     if es is None:
         return
 
-    LOGGER.info("Search: ", settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
+    LOGGER.info(f"Search: {settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX}")
 
     # Index needs a refresh for the search to work this quickly
     es.indices.refresh(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
 
-    rs = es.search(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX, query={"match_all": {}})
-    LOGGER.info("Search result: ", rs)
-    return rs
+    response = es.search(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX, query={"match_all": {}})
+    LOGGER.info(f"Search result: {response}")
+    return response
 
 
 def get_entries_from_elastic_search(id_list: List[str]) -> Optional[ObjectApiResponse]:
@@ -171,10 +174,10 @@ def get_entries_from_elastic_search(id_list: List[str]) -> Optional[ObjectApiRes
     if client is None:
         return
 
-    LOGGER.info("Getting from : ", settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
-    rs = client.mget(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX, ids=id_list)
-    print("Result: ", rs)
-    return rs
+    LOGGER.info(f"Getting from: {settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX}")
+    response = client.mget(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX, ids=id_list)
+    print(f"Result: {response}")
+    return response
 
 
 def delete_elastic_index() -> None:

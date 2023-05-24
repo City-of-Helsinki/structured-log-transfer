@@ -10,7 +10,7 @@ from django.utils import timezone
 from elasticsearch import Elasticsearch
 
 from log_transfer.models import AuditLogEntry
-
+from structuredlogtransfer.settings import AuditLoggerType
 
 if TYPE_CHECKING:
     from auditlog.models import LogEntry
@@ -64,7 +64,7 @@ def send_audit_log_to_elastic_search() -> Optional[List[str]]:
             document=message_body,
             op_type="create",
         )
-        LOGGER.info("Sending status: ", response)
+        LOGGER.info(f"Sending status: {response}")
 
         if response.get("result") == ES_STATUS_CREATED:
             entry.mark_as_sent()
@@ -135,7 +135,14 @@ class DjangoAuditLogFacade(AuditLogFacade):
 
 
 def get_unsent_entries() -> List[AuditLogFacade]:
-    if settings.USE_DJANGO_AUDITLOG:
+
+    if settings.AUDIT_LOGGER_TYPE == AuditLoggerType.SINGLE_COLUMN_JSON:
+        return [
+            SimpleAuditLogFacade(log=log)
+            for log in AuditLogEntry.objects.filter(is_sent=False).order_by("created_at")
+        ]
+
+    elif settings.AUDIT_LOGGER_TYPE == AuditLoggerType.DJANGO_AUDITLOG:
         from auditlog.models import LogEntry
 
         return [
@@ -145,17 +152,22 @@ def get_unsent_entries() -> List[AuditLogFacade]:
                 | Q(additional_data__is_sent=False),
             ).order_by("timestamp")
         ]
+
+    # Should never happen, but just in case
     else:
-        return [
-            SimpleAuditLogFacade(log=log)
-            for log in AuditLogEntry.objects.filter(is_sent=False).order_by("created_at")
-        ]
+        raise RuntimeError("Unknown audit logger type set.")
 
 
 def clear_audit_log_entries(days_to_keep: int = 30) -> None:
     # Only remove entries older than `X` days
 
-    if settings.USE_DJANGO_AUDITLOG:
+    if settings.AUDIT_LOGGER_TYPE == AuditLoggerType.SINGLE_COLUMN_JSON:
+        AuditLogEntry.objects.filter(
+            is_sent=True,
+            created_at__lte=(timezone.now() - timedelta(days=days_to_keep)),
+        ).delete()
+
+    elif settings.AUDIT_LOGGER_TYPE == AuditLoggerType.DJANGO_AUDITLOG:
         from auditlog.models import LogEntry
 
         LogEntry.objects.filter(
@@ -164,8 +176,6 @@ def clear_audit_log_entries(days_to_keep: int = 30) -> None:
             timestamp__lte=(timezone.now() - timedelta(days=days_to_keep)),
         ).delete()
 
+    # Should never happen, but just in case
     else:
-        AuditLogEntry.objects.filter(
-            is_sent=True,
-            created_at__lte=(timezone.now() - timedelta(days=days_to_keep)),
-        ).delete()
+        raise RuntimeError("Unknown audit logger type set.")

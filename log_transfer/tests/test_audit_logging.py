@@ -12,6 +12,7 @@ from log_transfer.models import AuditLogEntry
 from log_transfer.tests.audit_logging import search_entries_from_elastic_search, get_entries_from_elastic_search, \
     delete_elastic_index
 from log_transfer.tasks import send_audit_log_to_elastic_search, clear_audit_log_entries
+from structuredlogtransfer.settings import AuditLoggerType
 
 _common_fields = {
     "audit_event": {
@@ -36,7 +37,7 @@ _common_fields = {
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=False,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     AUDIT_LOG_ORIGIN="TEST_SERVICE",
 )
 @pytest.mark.parametrize("operation", list(Operation))
@@ -73,7 +74,7 @@ def test_log_system_operation(fixed_datetime, user, operation):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=False,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     AUDIT_LOG_ORIGIN="TEST_SERVICE",
 )
 def test_log_origin(fixed_datetime, user):
@@ -92,7 +93,7 @@ def test_log_origin(fixed_datetime, user):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=False,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     AUDIT_LOG_ORIGIN="TEST_SERVICE",
 )
 def test_log_current_timestamp(user):
@@ -120,7 +121,7 @@ def test_log_current_timestamp(user):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=False,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     AUDIT_LOG_ORIGIN="TEST_SERVICE",
 )
 def test_log_additional_information(user):
@@ -138,7 +139,7 @@ def test_log_additional_information(user):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=False,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     CLEAR_AUDIT_LOG_ENTRIES=True,
 )
 def test_send_audit_log(user, fixed_datetime, settings):
@@ -177,7 +178,7 @@ def test_send_audit_log(user, fixed_datetime, settings):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=True,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.DJANGO_AUDITLOG,
     CLEAR_AUDIT_LOG_ENTRIES=True,
 )
 def test_send_audit_log__use_django_auditlog(user, fixed_datetime):
@@ -194,7 +195,7 @@ def test_send_audit_log__use_django_auditlog(user, fixed_datetime):
             user,
             get_time=fixed_datetime,
             ip_address=addr,
-            use_django_auditlog=True,
+            audit_logger_type=AuditLoggerType.DJANGO_AUDITLOG,
         )
 
     assert LogEntry.objects.count() == 3
@@ -217,7 +218,7 @@ def test_send_audit_log__use_django_auditlog(user, fixed_datetime):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=False,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     DATE_TIME_PARENT_FIELD="different_audit_event",
     DATE_TIME_FIELD="different_date_time",
 )
@@ -257,7 +258,7 @@ def test_send_different_audit_log(user, fixed_datetime):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=False,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     DATE_TIME_PARENT_FIELD=None,
     DATE_TIME_FIELD="date_time"
 )
@@ -297,7 +298,7 @@ def test_send_timestamp_in_root(user, fixed_datetime):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=False,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     CLEAR_AUDIT_LOG_ENTRIES=True,
 )
 def test_clear_audit_log(user, fixed_datetime, settings):
@@ -338,7 +339,7 @@ def test_clear_audit_log(user, fixed_datetime, settings):
 
 @pytest.mark.django_db
 @override_settings(
-    USE_DJANGO_AUDITLOG=True,
+    AUDIT_LOGGER_TYPE=AuditLoggerType.DJANGO_AUDITLOG,
     CLEAR_AUDIT_LOG_ENTRIES=True,
 )
 def test_clear_audit_log__use_django_auditlog(user, fixed_datetime):
@@ -351,7 +352,7 @@ def test_clear_audit_log__use_django_auditlog(user, fixed_datetime):
             user,
             get_time=fixed_datetime,
             ip_address=addr,
-            use_django_auditlog=True,
+            audit_logger_type=AuditLoggerType.DJANGO_AUDITLOG,
         )
 
     assert LogEntry.objects.count() == 3

@@ -17,7 +17,7 @@ where the logs are stored.
 
 Instead of the above database model, logs can be sent from LogEntries created by
 [django-auditlog](https://github.com/jazzband/django-auditlog) if the
-`USE_DJANGO_AUDITLOG` is set to `True` in the environment. This will create
+`AUDIT_LOGGER_TYPE` is set to `DJANGO_AUDITLOG` in the environment. This will create
 a message in the following schema from the LogEntry:
 
 ```yaml
@@ -80,10 +80,11 @@ Running the tests:
 
 ### Docker compose
 
-Use `docker compose up --detach --build` to build and run the testing containers.
-You can also use `make up` if you have make installed.
+Use `docker compose --profile test-1 up --detach --build` to build and run the testing containers
+(configuration 1, change `--profile test-1` to `--profile test-2` to run second configuration).
+You can also use `make up` (or `make up2`) if you have make installed.
 
-When tests have completed, run `docker compose down --volumes --remove-orphans`
+When tests have completed, run `docker compose --profile test-1 --profile test-2 down --volumes --remove-orphans`
 (or `make down`) to remove the containers.
 
 ## Verifying the results
@@ -100,6 +101,7 @@ if using docker compose) for elastic log output if necessary.
 |-----------------------------------|------|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | AUDIT_LOG_ENVIRONMENT             | str  | ""                           | Audit log environment for the log created from django_auditlog                                                                            |
 | AUDIT_LOG_ORIGIN                  | str  | ""                           | Origin to write to elastic with the audit log entry                                                                                       |
+| AUDIT_LOGGER_TYPE                 | str  | "SINGLE_COLUMN_JSON"         | Which kind of audit logger to use. Options are defined in `structuredlogtransfer.settings.AuditLoggerType`                                |
 | AUDIT_TABLE_NAME                  | str  | "audit_logs"                 | Table name to read the logs from                                                                                                          |
 | AUTH_USER_MODEL                   | str  | "auth.User"                  | Reference to a custom user model. Required when logs coming from django_auditlog.                                                         |
 | CLEAR_AUDIT_LOG_ENTRIES           | bool | True                         | Clear audit log entries each month when monthly job is run. Set to False to disable this functionality even when running the monthly job. |
@@ -119,7 +121,6 @@ if using docker compose) for elastic log output if necessary.
 | SSL_CERT                          | str  | ""                           | Database ssl-cert path                                                                                                                    |
 | SSL_CIPHER                        | str  | ""                           | Database ssl-cipher                                                                                                                       |
 | SSL_KEY                           | str  | ""                           | Database ssl-key client key path                                                                                                          |
-| USE_DJANGO_AUDITLOG               | bool | False                        | Use django_auditlog instead of the custom db model.                                                                                       |
 
 See https://django-environ.readthedocs.io/en/latest/types.html#environ-env-db-url for possibilities on setting the database url.
 

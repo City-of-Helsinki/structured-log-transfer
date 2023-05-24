@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+from enum import Enum
 
 import environ
 
@@ -17,33 +18,39 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+class AuditLoggerType(str, Enum):
+    SINGLE_COLUMN_JSON = "SINGLE_COLUMN_JSON"
+    DJANGO_AUDITLOG = "DJANGO_AUDITLOG"
+
+
 env = environ.Env(
-    DEBUG=(bool, False),
-    NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
     ALLOWED_HOSTS=(list, []),
-    USE_X_FORWARDED_HOST=(bool, False),
+    AUDIT_LOG_ENVIRONMENT=(str, ""),
+    AUDIT_LOG_ORIGIN=(str, ""),
+    AUDIT_LOGGER_TYPE=(AuditLoggerType, AuditLoggerType.SINGLE_COLUMN_JSON),
+    AUDIT_TABLE_NAME=(str, "audit_logs"),
+    AUTH_USER_MODEL=(str, "auth.User"),
+    CLEAR_AUDIT_LOG_ENTRIES=(bool, True),
+    DATABASE_PASSWORD=(str, ""),
+    DATABASE_URL=(str, ""),
+    DATE_TIME_FIELD=(str, "date_time"),
+    DATE_TIME_PARENT_FIELD=(str, "audit_event"),
+    DB_USE_SSL=(bool, False),
+    DEBUG=(bool, False),
     ELASTICSEARCH_APP_AUDIT_LOG_INDEX=(str, "app_audit_log"),
     ELASTICSEARCH_HOST=(str, ""),
-    ELASTICSEARCH_PORT=(int, 0),
-    ELASTICSEARCH_USERNAME=(str, ""),
     ELASTICSEARCH_PASSWORD=(str, ""),
-    CLEAR_AUDIT_LOG_ENTRIES=(bool, True),
-    ENABLE_SEND_AUDIT_LOG=(bool, True),
-    USE_DJANGO_AUDITLOG=(bool, False),
-    AUDIT_LOG_ORIGIN=(str, ""),
-    AUDIT_LOG_ENVIRONMENT=(str, ""),
-    AUDIT_TABLE_NAME=(str,"audit_logs"),
+    ELASTICSEARCH_PORT=(int, 0),
     ELASTICSEARCH_SCHEME=(str, "https"),
-    DATE_TIME_PARENT_FIELD = (str, "audit_event"),
-    DATE_TIME_FIELD = (str, "date_time"),
-    DATABASE_URL = (str, ""),
-    DATABASE_PASSWORD = (str, ""),
-    DB_USE_SSL = (bool, False),
-    SSL_CA = (str, ""),
-    SSL_KEY = (str, ""),
-    SSL_CERT = (str, ""),
-    SSL_CIPHER = (str, ""),
-    AUTH_USER_MODEL = (str, "auth.User"),
+    ELASTICSEARCH_USERNAME=(str, ""),
+    ENABLE_SEND_AUDIT_LOG=(bool, True),
+    NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
+    SSL_CA=(str, ""),
+    SSL_CERT=(str, ""),
+    SSL_CIPHER=(str, ""),
+    SSL_KEY=(str, ""),
+    USE_X_FORWARDED_HOST=(bool, False),
 )
 
 # Quick-start development settings - unsuitable for production
@@ -86,8 +93,8 @@ DATE_TIME_FIELD = env("DATE_TIME_FIELD")
 # Scheme for connecting to elastic, for example: "http", or: "https"
 ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
 
-# Whether to use django-auditlog or a specified custom solution
-USE_DJANGO_AUDITLOG = env("USE_DJANGO_AUDITLOG")
+# What kind of audit logger type to use, defined in AuditLoggerType
+AUDIT_LOGGER_TYPE = env("AUDIT_LOGGER_TYPE")
 
 # Application definition
 
@@ -104,7 +111,7 @@ _third_party_apps = [
     "django_extensions",
 ]
 
-if USE_DJANGO_AUDITLOG:
+if AUDIT_LOGGER_TYPE == AuditLoggerType.DJANGO_AUDITLOG:
     _third_party_apps.append("auditlog")
 
 _project_apps = [
