@@ -17,6 +17,34 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env(
+    DEBUG=(bool, False),
+    NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
+    ALLOWED_HOSTS=(list, []),
+    USE_X_FORWARDED_HOST=(bool, False),
+    ELASTICSEARCH_APP_AUDIT_LOG_INDEX=(str, "app_audit_log"),
+    ELASTICSEARCH_HOST=(str, ""),
+    ELASTICSEARCH_PORT=(int, 0),
+    ELASTICSEARCH_USERNAME=(str, ""),
+    ELASTICSEARCH_PASSWORD=(str, ""),
+    CLEAR_AUDIT_LOG_ENTRIES=(bool, True),
+    ENABLE_SEND_AUDIT_LOG=(bool, True),
+    USE_DJANGO_AUDITLOG=(bool, False),
+    AUDIT_LOG_ORIGIN=(str, ""),
+    AUDIT_LOG_ENVIRONMENT=(str, ""),
+    AUDIT_TABLE_NAME=(str,"audit_logs"),
+    ELASTICSEARCH_SCHEME=(str, "https"),
+    DATE_TIME_PARENT_FIELD = (str, "audit_event"),
+    DATE_TIME_FIELD = (str, "date_time"),
+    DATABASE_URL = (str, ""),
+    DATABASE_PASSWORD = (str, ""),
+    DB_USE_SSL = (bool, False),
+    SSL_CA = (str, ""),
+    SSL_KEY = (str, ""),
+    SSL_CERT = (str, ""),
+    SSL_CIPHER = (str, ""),
+    AUTH_USER_MODEL = (str, "auth.User"),
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -28,22 +56,62 @@ SECRET_KEY = 'django-insecure-4(e0ry+n%rad8^!i-+d1($9u_=wbvcz*iv5n)hc&omki(dne%h
 DEBUG = True
 
 ALLOWED_HOSTS = []
+AUTH_USER_MODEL = env("AUTH_USER_MODEL")
 
-# If set to true, will clear audit log entries every month
-CLEAR_AUDIT_LOG_ENTRIES = True
+# Audit logging
+AUDIT_LOG_ORIGIN = env("AUDIT_LOG_ORIGIN")
+AUDIT_LOG_ENVIRONMENT = env("AUDIT_LOG_ENVIRONMENT")
+CLEAR_AUDIT_LOG_ENTRIES = env("CLEAR_AUDIT_LOG_ENTRIES")
+ELASTICSEARCH_APP_AUDIT_LOG_INDEX = env("ELASTICSEARCH_APP_AUDIT_LOG_INDEX")
+ELASTICSEARCH_HOST = env("ELASTICSEARCH_HOST")
+ELASTICSEARCH_PORT = 0
+
+if env("ELASTICSEARCH_PORT"):
+    ELASTICSEARCH_PORT = env("ELASTICSEARCH_PORT")
+else:
+    if ELASTICSEARCH_HOST.count(":") > 0:
+        hostAndPort = ELASTICSEARCH_HOST.split(":", 1)
+        ELASTICSEARCH_HOST = hostAndPort[0]
+        ELASTICSEARCH_PORT = int(hostAndPort[1])
+
+ELASTICSEARCH_USERNAME = env("ELASTICSEARCH_USERNAME")
+ELASTICSEARCH_PASSWORD = env("ELASTICSEARCH_PASSWORD")
+ENABLE_SEND_AUDIT_LOG = env("ENABLE_SEND_AUDIT_LOG")
+AUDIT_TABLE_NAME = env("AUDIT_TABLE_NAME")
+
+# Field names for fetching the elastic timestamp from json data
+DATE_TIME_PARENT_FIELD = env("DATE_TIME_PARENT_FIELD")
+DATE_TIME_FIELD = env("DATE_TIME_FIELD")
+
+# Scheme for connecting to elastic, for example: "http", or: "https"
+ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
+
+# Whether to use django-auditlog or a specified custom solution
+USE_DJANGO_AUDITLOG = env("USE_DJANGO_AUDITLOG")
 
 # Application definition
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'log_transfer',
-    'django_extensions',
+_first_party_apps = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
 ]
+
+_third_party_apps = [
+    "django_extensions",
+]
+
+if USE_DJANGO_AUDITLOG:
+    _third_party_apps.append("auditlog")
+
+_project_apps = [
+    "log_transfer",
+]
+
+INSTALLED_APPS = _first_party_apps + _third_party_apps + _project_apps
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -76,58 +144,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'structuredlogtransfer.wsgi.application'
 
 
-env = environ.Env(
-    DEBUG=(bool, False),
-    NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
-    ALLOWED_HOSTS=(list, []),
-    USE_X_FORWARDED_HOST=(bool, False),
-    ELASTICSEARCH_APP_AUDIT_LOG_INDEX=(str, "app_audit_log"),
-    ELASTICSEARCH_HOST=(str, ""),
-    ELASTICSEARCH_PORT=(int, 0),
-    ELASTICSEARCH_USERNAME=(str, ""),
-    ELASTICSEARCH_PASSWORD=(str, ""),
-    CLEAR_AUDIT_LOG_ENTRIES=(bool, True),
-    ENABLE_SEND_AUDIT_LOG=(bool, True),
-    DB_PREFIX=(str, ""),
-    AUDIT_LOG_ORIGIN=(str, ""),
-    AUDIT_TABLE_NAME=(str,"audit_logs"),
-    ELASTICSEARCH_SCHEME=(str, "https"),
-    DATE_TIME_PARENT_FIELD = (str, "audit_event"),
-    DATE_TIME_FIELD = (str, "date_time"),
-    DATABASE_URL = (str, ""),
-    DATABASE_PASSWORD = (str, ""),
-    DB_USE_SSL = (bool, False),
-    SSL_CA = (str, ""),
-    SSL_KEY = (str, ""),
-    SSL_CERT = (str, ""),
-    SSL_CIPHER = (str, "")
-)
 
-# Audit logging
-AUDIT_LOG_ORIGIN = env("AUDIT_LOG_ORIGIN")
-CLEAR_AUDIT_LOG_ENTRIES = env("CLEAR_AUDIT_LOG_ENTRIES")
-ELASTICSEARCH_APP_AUDIT_LOG_INDEX = env("ELASTICSEARCH_APP_AUDIT_LOG_INDEX")
-ELASTICSEARCH_HOST = env("ELASTICSEARCH_HOST")
-ELASTICSEARCH_PORT=0
-if (env("ELASTICSEARCH_PORT")):
-  ELASTICSEARCH_PORT = env("ELASTICSEARCH_PORT")
-else:
-  if(ELASTICSEARCH_HOST.count(":") > 0):
-    hostAndPort=ELASTICSEARCH_HOST.split(":", 1)
-    ELASTICSEARCH_HOST=hostAndPort[0]
-    ELASTICSEARCH_PORT=int(hostAndPort[1])
-    
-ELASTICSEARCH_USERNAME = env("ELASTICSEARCH_USERNAME")
-ELASTICSEARCH_PASSWORD = env("ELASTICSEARCH_PASSWORD")
-ENABLE_SEND_AUDIT_LOG = env("ENABLE_SEND_AUDIT_LOG")
-AUDIT_TABLE_NAME = env("AUDIT_TABLE_NAME")
-
-# Field names for fetching the elastic timestamp from json data
-DATE_TIME_PARENT_FIELD =  env("DATE_TIME_PARENT_FIELD")
-DATE_TIME_FIELD =  env("DATE_TIME_FIELD")
-
-# Sheme for connecting to elastic, for example: "http", or: "https"
-ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -144,7 +161,7 @@ if (env("DB_USE_SSL")):
     ssl_subpart['cert'] = env("SSL_CERT")
   if (env("SSL_CIPHER")):
     ssl_subpart['cipher'] = env("SSL_CIPHER")
-  
+
   SSL_OPTS= {
      'OPTIONS': {
             'ssl': ssl_subpart

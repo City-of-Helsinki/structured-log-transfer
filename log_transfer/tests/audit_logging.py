@@ -1,14 +1,17 @@
 from datetime import datetime, timezone
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, List
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 from django.db.models.base import ModelBase
+from elastic_transport import ObjectApiResponse
 
 from log_transfer.enums import Operation, Role, Status
 from log_transfer.models import AuditLogEntry
+from log_transfer.tasks import LOGGER, init
 
 # In this module for testing purposes only.
 
@@ -34,38 +37,56 @@ def log(
     get_time: Callable[[], datetime] = _now,
     ip_address: str = "",
     additional_information: str = "",
+    use_django_auditlog: bool = False,
 ):
     current_time = get_time()
-    user_id = str(actor.pk) if getattr(actor, "pk", None) else ""
 
-    role = Role.SYSTEM
-    
-    message = {
-        "audit_event": { # See env variable DATE_TIME_PARENT_FIELD if changing this
-            "origin": settings.AUDIT_LOG_ORIGIN,
-            "status": str(status.value),
-            "date_time_epoch": int(current_time.timestamp() * 1000),
-            "date_time": _iso8601_date(current_time), # See env variable DATE_TIME_FIELD if changing this
-            "actor": {
-                "role": str(role.value),
-                "user_id": user_id,
-                "provider": actor_backend
-                if actor_backend
-                else "",
-                "ip_address": ip_address,
-            },
-            "operation": str(operation.value),
-            "additional_information": additional_information,
-            "target": {
-                "id": _get_target_id(target),
-                "type": _get_target_type(target),
-            },
-        },
-    }
+    if use_django_auditlog:
+        from auditlog.models import LogEntry
 
-    AuditLogEntry.objects.create(
-        message=message,
-    )
+        LogEntry.objects.create(
+            content_type=ContentType.objects.get_for_model(actor),
+            object_pk=str(actor.pk),
+            object_id=actor.id,
+            serialized_data=None,
+            actor=actor,
+            additional_data={"is_sent": False, "ip_address": ip_address},
+            action=LogEntry.Action.CREATE,
+            timestamp=current_time,
+            changes={"username": [None, actor.username]},
+        )
+
+    else:
+        user_id = str(actor.pk) if getattr(actor, "pk", None) else ""
+
+        role = Role.SYSTEM
+
+        message = {
+            "audit_event": { # See env variable DATE_TIME_PARENT_FIELD if changing this
+                "origin": settings.AUDIT_LOG_ORIGIN,
+                "status": str(status.value),
+                "date_time_epoch": int(current_time.timestamp() * 1000),
+                "date_time": _iso8601_date(current_time), # See env variable DATE_TIME_FIELD if changing this
+                "actor": {
+                    "role": str(role.value),
+                    "user_id": user_id,
+                    "provider": actor_backend
+                    if actor_backend
+                    else "",
+                    "ip_address": ip_address,
+                },
+                "operation": str(operation.value),
+                "additional_information": additional_information,
+                "target": {
+                    "id": _get_target_id(target),
+                    "type": _get_target_type(target),
+                },
+            },
+        }
+
+        AuditLogEntry.objects.create(
+            message=message,
+        )
 
 def differentKindOfLog(
     somefield: str,
@@ -74,7 +95,7 @@ def differentKindOfLog(
     anotherfield: str = "",
 ):
     current_time = get_time()
-    
+
     message = {
         "different_audit_event": { # See env variable DATE_TIME_PARENT_FIELD in tests
             "origin": settings.AUDIT_LOG_ORIGIN,
@@ -97,7 +118,7 @@ def dateTimeInRootLog(
     anotherfield: str = "",
 ):
     current_time = get_time()
-    
+
     message = {
         "different_audit_event": {
             "origin": settings.AUDIT_LOG_ORIGIN,
@@ -128,3 +149,36 @@ def _get_target_type(target: Union[Model, ModelBase]) -> Optional[str]:
         if isinstance(target, Model)
         else str(target.__name__)
     )
+
+
+def search_entries_from_elastic_search() -> Optional[ObjectApiResponse]:
+    es = init()
+    if es is None:
+        return
+
+    LOGGER.info("Search: ", settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
+
+    # Index needs a refresh for the search to work this quickly
+    es.indices.refresh(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
+
+    rs = es.search(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX, query={"match_all": {}})
+    LOGGER.info("Search result: ", rs)
+    return rs
+
+
+def get_entries_from_elastic_search(id_list: List[str]) -> Optional[ObjectApiResponse]:
+    client = init()
+    if client is None:
+        return
+
+    LOGGER.info("Getting from : ", settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
+    rs = client.mget(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX, ids=id_list)
+    print("Result: ", rs)
+    return rs
+
+
+def delete_elastic_index() -> None:
+    client = init()
+    if client is None:
+        return
+    client.options(ignore_status=[404]).indices.delete(index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)

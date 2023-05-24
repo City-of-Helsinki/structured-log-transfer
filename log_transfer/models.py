@@ -1,6 +1,8 @@
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 
 class AuditLogEntry(models.Model):
     is_sent = models.BooleanField(default=False, verbose_name=_("is sent"))
@@ -18,16 +20,3 @@ class AuditLogEntry(models.Model):
                 "Created at: " + str(self.created_at)
             ]
         )
-
-    def markAsSent(self):
-      self.is_sent = True
-      self.save()
-
-    def getTimestamp(self): # TODO: make this configurable xpath style?
-      if settings.DATE_TIME_PARENT_FIELD:
-        return self.message[settings.DATE_TIME_PARENT_FIELD][settings.DATE_TIME_FIELD]
-      else:
-        return self.message[settings.DATE_TIME_FIELD]
-    @staticmethod
-    def getUnsentEntries():
-      return AuditLogEntry.objects.filter(is_sent=False).order_by("created_at")

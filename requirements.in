@@ -1,6 +1,7 @@
 Django~=3.2
 django-extensions
 django-environ
+django-auditlog
 psycopg2
 elasticsearch
 pytest
