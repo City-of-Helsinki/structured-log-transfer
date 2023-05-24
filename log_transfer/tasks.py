@@ -5,6 +5,7 @@ from functools import cached_property
 from typing import Any, Dict, List, TYPE_CHECKING, Optional
 
 from django.conf import settings
+from django.db.models import Q
 from django.utils import timezone
 from elasticsearch import Elasticsearch
 
@@ -127,6 +128,8 @@ class DjangoAuditLogFacade(AuditLogFacade):
         }
 
     def mark_as_sent(self) -> None:
+        if self.log.additional_data is None:
+            self.log.additional_data = {}
         self.log.additional_data["is_sent"] = True
         self.log.save()
 
@@ -137,7 +140,10 @@ def get_unsent_entries() -> List[AuditLogFacade]:
 
         return [
             DjangoAuditLogFacade(log=log)
-            for log in LogEntry.objects.filter(additional_data__is_sent=False).order_by("timestamp")
+            for log in LogEntry.objects.filter(
+                ~Q(additional_data__has_key="is_sent")  # support old entries
+                | Q(additional_data__is_sent=False),
+            ).order_by("timestamp")
         ]
     else:
         return [
@@ -153,7 +159,8 @@ def clear_audit_log_entries(days_to_keep: int = 30) -> None:
         from auditlog.models import LogEntry
 
         LogEntry.objects.filter(
-            additional_data__is_sent=True,
+            ~Q(additional_data__has_key="is_sent")  # support old entries
+            | Q(additional_data__is_sent=True),
             timestamp__lte=(timezone.now() - timedelta(days=days_to_keep)),
         ).delete()
 

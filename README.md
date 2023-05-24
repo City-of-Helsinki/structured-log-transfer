@@ -46,8 +46,10 @@ components:
       type: object
 ```
 
-Importantly, the `additional_data` field in the LogEntry should contain a `is_sent` boolean value, which
-is used to keep track of whether the log has been sent to ElasticSearch or not. This is set to `False` initially.
+The `additional_data` field in the LogEntry should contain a `is_sent` boolean value, which
+is used to keep track of whether the log has been sent to ElasticSearch or not. 
+This should be set to `False` initially, but old log entries without this additional data
+will be treated as not sent.
 
 > Note: If using a custom user model, `AUTH_USER_MODEL` setting should be set to the correct model!
 
