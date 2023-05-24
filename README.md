@@ -21,29 +21,25 @@ Instead of the above database model, logs can be sent from LogEntries created by
 a message in the following schema from the LogEntry:
 
 ```yaml
-components:
-- name: projectname
-  description: Log entry
-  mapping_properties:
-    '@timestamp':
+'@timestamp':
+  type: date  # auditlog.models.LogEntry.timestamp
+audit_event:
+  properties:
+    actor:
+      type: text  # str(auditlog.models.LogEntry.actor), set by AUTH_USER_MODEL setting
+    date_time:
       type: date  # auditlog.models.LogEntry.timestamp
-    audit_event:
-      properties:
-        actor:
-          type: text  # str(auditlog.models.LogEntry.actor), set by AUTH_USER_MODEL setting
-        date_time:
-          type: date  # auditlog.models.LogEntry.timestamp
-        operation:
-          type: keyword  # auditlog.models.LogEntry.action (create / update / delete / access)
-        origin:
-          type: constant_keyword  # set by AUDIT_LOG_ORIGIN setting
-        target:
-          type: text  # auditlog.models.LogEntry.object_repr
-        environment:
-          type: constant_keyword  # set by AUDIT_LOG_ENVIRONMENT setting
-        message:
-          type: text  # auditlog.models.LogEntry.changes
-      type: object
+    operation:
+      type: keyword  # auditlog.models.LogEntry.action (create / update / delete / access)
+    origin:
+      type: constant_keyword  # set by AUDIT_LOG_ORIGIN setting
+    target:
+      type: text  # auditlog.models.LogEntry.object_repr
+    environment:
+      type: constant_keyword  # set by AUDIT_LOG_ENVIRONMENT setting
+    message:
+      type: text  # auditlog.models.LogEntry.changes
+  type: object
 ```
 
 The `additional_data` field in the LogEntry should contain a `is_sent` boolean value, which
