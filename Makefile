@@ -7,7 +7,8 @@ define helptext
 
  Commands:
 
- up          Run tests with docker compose.
+ up1/up      Run testing configuation 1 with docker compose.
+ up2         Run testing configuation 2 with docker compose.
  down        Shut down containers.
 
 endef
@@ -19,7 +20,12 @@ help:
 	@echo "$$helptext"
 
 up:
-	@docker compose up --build --detach
+	@docker compose --profile test-1 up --build --detach
+
+up1: up
+
+up2:
+	@docker compose --profile test-2 up --build --detach
 
 down:
-	@docker compose down --volumes --remove-orphans
+	@docker compose --profile test-1 --profile test-2 down --volumes --remove-orphans
