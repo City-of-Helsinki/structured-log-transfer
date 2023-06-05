@@ -30,7 +30,6 @@ env = environ.Env(
     AUDIT_LOG_ORIGIN=(str, ""),
     AUDIT_LOGGER_TYPE=(AuditLoggerType, AuditLoggerType.SINGLE_COLUMN_JSON),
     AUDIT_TABLE_NAME=(str, "audit_logs"),
-    AUTH_USER_MODEL=(str, "auth.User"),
     CLEAR_AUDIT_LOG_ENTRIES=(bool, True),
     DATABASE_PASSWORD=(str, ""),
     DATABASE_URL=(str, ""),
@@ -51,6 +50,7 @@ env = environ.Env(
     SSL_CIPHER=(str, ""),
     SSL_KEY=(str, ""),
     USE_X_FORWARDED_HOST=(bool, False),
+    USER_TABLE_NAME=(str, "auth_user"),
 )
 
 # Quick-start development settings - unsuitable for production
@@ -63,7 +63,10 @@ SECRET_KEY = 'django-insecure-4(e0ry+n%rad8^!i-+d1($9u_=wbvcz*iv5n)hc&omki(dne%h
 DEBUG = True
 
 ALLOWED_HOSTS = []
-AUTH_USER_MODEL = env("AUTH_USER_MODEL")
+
+# Set user model (for django_auditlog)
+AUTH_USER_MODEL = "log_transfer.User"
+USER_TABLE_NAME = env("USER_TABLE_NAME")
 
 # Audit logging
 AUDIT_LOG_ORIGIN = env("AUDIT_LOG_ORIGIN")
