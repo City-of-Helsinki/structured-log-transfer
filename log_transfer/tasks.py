@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.utils import timezone
 from elasticsearch import Elasticsearch
 
-from log_transfer.models import AuditLogEntry
+from log_transfer.models import AuditLogEntry, User
 from structuredlogtransfer.settings import AuditLoggerType
 
 if TYPE_CHECKING:
@@ -114,10 +114,11 @@ class DjangoAuditLogFacade(AuditLogFacade):
 
     @cached_property
     def message(self) -> Dict[str, Any]:
+        actor: Optional[User] = self.log.actor
         return {
             "@timestamp": self.log.timestamp,
             "audit_event": {
-                "actor": self.log.actor.get_full_name() or str(self.log.actor.email),
+                "actor": "unknown" if actor is None else actor.get_full_name() or str(actor.email),
                 "date_time": self.log.timestamp,
                 "operation": str(self.log.action),
                 "origin": settings.AUDIT_LOG_ORIGIN,

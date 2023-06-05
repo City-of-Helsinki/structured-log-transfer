@@ -26,7 +26,7 @@ a message in the following schema from the LogEntry:
 audit_event:
   properties:
     actor:
-      type: text  # str(auditlog.models.LogEntry.actor), set by AUTH_USER_MODEL setting
+      type: text  # auditlog.models.LogEntry.actor.get_full_name(), or .email, or "unknown"
     date_time:
       type: date  # auditlog.models.LogEntry.timestamp
     operation:
@@ -47,7 +47,7 @@ is used to keep track of whether the log has been sent to ElasticSearch or not.
 This should be set to `False` initially, but old log entries without this additional data
 will be treated as not sent.
 
-> Note: If using a custom user model, `AUTH_USER_MODEL` setting should be set to the correct model!
+> Note: If using a custom user model, `USER_TABLE_NAME` setting should be set to the table name for the new model!
 
 ## Extending to other models
 
@@ -103,7 +103,6 @@ if using docker compose) for elastic log output if necessary.
 | AUDIT_LOG_ORIGIN                  | str  | ""                           | Origin to write to elastic with the audit log entry                                                                                       |
 | AUDIT_LOGGER_TYPE                 | str  | "SINGLE_COLUMN_JSON"         | Which kind of audit logger to use. Options are defined in `structuredlogtransfer.settings.AuditLoggerType`                                |
 | AUDIT_TABLE_NAME                  | str  | "audit_logs"                 | Table name to read the logs from                                                                                                          |
-| AUTH_USER_MODEL                   | str  | "auth.User"                  | Reference to a custom user model. Required when logs coming from django_auditlog.                                                         |
 | CLEAR_AUDIT_LOG_ENTRIES           | bool | True                         | Clear audit log entries each month when monthly job is run. Set to False to disable this functionality even when running the monthly job. |
 | DATABASE_URL                      | str  | "postgres:///structuredlogs" | Set up for database connection for reading log entries from, see                                                                          |
 | DATE_TIME_FIELD                   | str  | "date_time"                  | Field name for fetching the elastic timestamp from json data                                                                              |
@@ -121,6 +120,8 @@ if using docker compose) for elastic log output if necessary.
 | SSL_CERT                          | str  | ""                           | Database ssl-cert path                                                                                                                    |
 | SSL_CIPHER                        | str  | ""                           | Database ssl-cipher                                                                                                                       |
 | SSL_KEY                           | str  | ""                           | Database ssl-key client key path                                                                                                          |
+| USER_TABLE_NAME                   | str  | "auth_user"                  | Table name for the user model.                                                                                                            |
+
 
 See https://django-environ.readthedocs.io/en/latest/types.html#environ-env-db-url for possibilities on setting the database url.
 
