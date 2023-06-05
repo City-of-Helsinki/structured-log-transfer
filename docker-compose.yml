@@ -1,0 +1,77 @@
+version: "3.9"
+services:
+
+  structured-log-transfer-postgres:
+    image: postgres:latest
+    command: ["postgres", "-c", "log_statement=all"]
+    ports:
+      - "5041:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: databasename
+    container_name: structured-log-transfer-db
+
+  elasticsearch-for-structured-log-transfer-test:
+    build:
+      context: ./localtest
+      dockerfile: Dockerfile-elastic
+    environment:
+      discovery.type: single-node
+      network.host: 0.0.0.0
+    volumes:
+      - ./localtest/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9200:9200"
+    container_name: elasticinstance
+
+  structured-log-transfer-test-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ELASTICSEARCH_HOST: "host.docker.internal"
+      ELASTICSEARCH_PORT: "9200"
+      ELASTICSEARCH_USERNAME:
+      ELASTICSEARCH_PASSWORD:
+      ELASTICSEARCH_SCHEME: "http"
+      DATABASE_URL: "postgres://user:password@structured-log-transfer-postgres/databasename"
+      DJANGO_SETTINGS_MODULE: "structuredlogtransfer.settings"
+      AUDIT_LOGGER_TYPE: "DJANGO_AUDITLOG"  # enables testing for django_auditlog
+    depends_on:
+      - structured-log-transfer-postgres
+      - elasticsearch-for-structured-log-transfer-test
+    volumes:
+      - ./localtest/entrypoint_test.sh:/app/entrypoint_test.sh
+    profiles:
+      - test-1
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    entrypoint: /app/entrypoint_test.sh
+    container_name: structured-log-transfer-test-1
+
+  structured-log-transfer-test-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ELASTICSEARCH_HOST: "host.docker.internal:9200"
+      ELASTICSEARCH_SCHEME: "http"
+      DATABASE_URL: "postgres://user:password@structured-log-transfer-postgres/databasename"
+      DJANGO_SETTINGS_MODULE: "structuredlogtransfer.settings"
+      AUDIT_LOGGER_TYPE: "DJANGO_AUDITLOG"  # enables testing for django_auditlog
+    depends_on:
+      - structured-log-transfer-postgres
+      - elasticsearch-for-structured-log-transfer-test
+    volumes:
+      - ./localtest/entrypoint_test.sh:/app/entrypoint_test.sh
+    profiles:
+      - test-2
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    entrypoint: /app/entrypoint_test.sh
+    container_name: structured-log-transfer-test-2
+
+networks:
+  default:
+    name: structuredlogtestnet

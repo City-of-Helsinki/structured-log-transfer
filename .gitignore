@@ -13,3 +13,6 @@ db.sqlite3
 #Possible eclipse project file
 .project
 
+
+# Generated requirements
+requirements.txt

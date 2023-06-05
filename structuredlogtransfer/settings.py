@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+from enum import Enum
 
 import environ
 
@@ -17,6 +18,40 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+class AuditLoggerType(str, Enum):
+    SINGLE_COLUMN_JSON = "SINGLE_COLUMN_JSON"
+    DJANGO_AUDITLOG = "DJANGO_AUDITLOG"
+
+
+env = environ.Env(
+    ALLOWED_HOSTS=(list, []),
+    AUDIT_LOG_ENVIRONMENT=(str, ""),
+    AUDIT_LOG_ORIGIN=(str, ""),
+    AUDIT_LOGGER_TYPE=(AuditLoggerType, AuditLoggerType.SINGLE_COLUMN_JSON),
+    AUDIT_TABLE_NAME=(str, "audit_logs"),
+    CLEAR_AUDIT_LOG_ENTRIES=(bool, True),
+    DATABASE_PASSWORD=(str, ""),
+    DATABASE_URL=(str, ""),
+    DATE_TIME_FIELD=(str, "date_time"),
+    DATE_TIME_PARENT_FIELD=(str, "audit_event"),
+    DB_USE_SSL=(bool, False),
+    DEBUG=(bool, False),
+    ELASTICSEARCH_APP_AUDIT_LOG_INDEX=(str, "app_audit_log"),
+    ELASTICSEARCH_HOST=(str, ""),
+    ELASTICSEARCH_PASSWORD=(str, ""),
+    ELASTICSEARCH_PORT=(int, 0),
+    ELASTICSEARCH_SCHEME=(str, "https"),
+    ELASTICSEARCH_USERNAME=(str, ""),
+    ENABLE_SEND_AUDIT_LOG=(bool, True),
+    NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
+    SSL_CA=(str, ""),
+    SSL_CERT=(str, ""),
+    SSL_CIPHER=(str, ""),
+    SSL_KEY=(str, ""),
+    USE_X_FORWARDED_HOST=(bool, False),
+    USER_TABLE_NAME=(str, "auth_user"),
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -29,21 +64,64 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-# If set to true, will clear audit log entries every month
-CLEAR_AUDIT_LOG_ENTRIES = True
+# Set user model (for django_auditlog)
+AUTH_USER_MODEL = "log_transfer.User"
+USER_TABLE_NAME = env("USER_TABLE_NAME")
+
+# Audit logging
+AUDIT_LOG_ORIGIN = env("AUDIT_LOG_ORIGIN")
+AUDIT_LOG_ENVIRONMENT = env("AUDIT_LOG_ENVIRONMENT")
+CLEAR_AUDIT_LOG_ENTRIES = env("CLEAR_AUDIT_LOG_ENTRIES")
+ELASTICSEARCH_APP_AUDIT_LOG_INDEX = env("ELASTICSEARCH_APP_AUDIT_LOG_INDEX")
+ELASTICSEARCH_HOST = env("ELASTICSEARCH_HOST")
+ELASTICSEARCH_PORT = 0
+
+if env("ELASTICSEARCH_PORT"):
+    ELASTICSEARCH_PORT = env("ELASTICSEARCH_PORT")
+else:
+    if ELASTICSEARCH_HOST.count(":") > 0:
+        hostAndPort = ELASTICSEARCH_HOST.split(":", 1)
+        ELASTICSEARCH_HOST = hostAndPort[0]
+        ELASTICSEARCH_PORT = int(hostAndPort[1])
+
+ELASTICSEARCH_USERNAME = env("ELASTICSEARCH_USERNAME")
+ELASTICSEARCH_PASSWORD = env("ELASTICSEARCH_PASSWORD")
+ENABLE_SEND_AUDIT_LOG = env("ENABLE_SEND_AUDIT_LOG")
+AUDIT_TABLE_NAME = env("AUDIT_TABLE_NAME")
+
+# Field names for fetching the elastic timestamp from json data
+DATE_TIME_PARENT_FIELD = env("DATE_TIME_PARENT_FIELD")
+DATE_TIME_FIELD = env("DATE_TIME_FIELD")
+
+# Scheme for connecting to elastic, for example: "http", or: "https"
+ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
+
+# What kind of audit logger type to use, defined in AuditLoggerType
+AUDIT_LOGGER_TYPE = env("AUDIT_LOGGER_TYPE")
 
 # Application definition
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'log_transfer',
-    'django_extensions',
+_first_party_apps = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
 ]
+
+_third_party_apps = [
+    "django_extensions",
+]
+
+if AUDIT_LOGGER_TYPE == AuditLoggerType.DJANGO_AUDITLOG:
+    _third_party_apps.append("auditlog")
+
+_project_apps = [
+    "log_transfer",
+]
+
+INSTALLED_APPS = _first_party_apps + _third_party_apps + _project_apps
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -76,58 +154,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'structuredlogtransfer.wsgi.application'
 
 
-env = environ.Env(
-    DEBUG=(bool, False),
-    NEXT_PUBLIC_BACKEND_URL=(str, "https://localhost:8000"),
-    ALLOWED_HOSTS=(list, []),
-    USE_X_FORWARDED_HOST=(bool, False),
-    ELASTICSEARCH_APP_AUDIT_LOG_INDEX=(str, "app_audit_log"),
-    ELASTICSEARCH_HOST=(str, ""),
-    ELASTICSEARCH_PORT=(int, 0),
-    ELASTICSEARCH_USERNAME=(str, ""),
-    ELASTICSEARCH_PASSWORD=(str, ""),
-    CLEAR_AUDIT_LOG_ENTRIES=(bool, True),
-    ENABLE_SEND_AUDIT_LOG=(bool, True),
-    DB_PREFIX=(str, ""),
-    AUDIT_LOG_ORIGIN=(str, ""),
-    AUDIT_TABLE_NAME=(str,"audit_logs"),
-    ELASTICSEARCH_SCHEME=(str, "https"),
-    DATE_TIME_PARENT_FIELD = (str, "audit_event"),
-    DATE_TIME_FIELD = (str, "date_time"),
-    DATABASE_URL = (str, ""),
-    DATABASE_PASSWORD = (str, ""),
-    DB_USE_SSL = (bool, False),
-    SSL_CA = (str, ""),
-    SSL_KEY = (str, ""),
-    SSL_CERT = (str, ""),
-    SSL_CIPHER = (str, "")
-)
 
-# Audit logging
-AUDIT_LOG_ORIGIN = env("AUDIT_LOG_ORIGIN")
-CLEAR_AUDIT_LOG_ENTRIES = env("CLEAR_AUDIT_LOG_ENTRIES")
-ELASTICSEARCH_APP_AUDIT_LOG_INDEX = env("ELASTICSEARCH_APP_AUDIT_LOG_INDEX")
-ELASTICSEARCH_HOST = env("ELASTICSEARCH_HOST")
-ELASTICSEARCH_PORT=0
-if (env("ELASTICSEARCH_PORT")):
-  ELASTICSEARCH_PORT = env("ELASTICSEARCH_PORT")
-else:
-  if(ELASTICSEARCH_HOST.count(":") > 0):
-    hostAndPort=ELASTICSEARCH_HOST.split(":", 1)
-    ELASTICSEARCH_HOST=hostAndPort[0]
-    ELASTICSEARCH_PORT=int(hostAndPort[1])
-    
-ELASTICSEARCH_USERNAME = env("ELASTICSEARCH_USERNAME")
-ELASTICSEARCH_PASSWORD = env("ELASTICSEARCH_PASSWORD")
-ENABLE_SEND_AUDIT_LOG = env("ENABLE_SEND_AUDIT_LOG")
-AUDIT_TABLE_NAME = env("AUDIT_TABLE_NAME")
-
-# Field names for fetching the elastic timestamp from json data
-DATE_TIME_PARENT_FIELD =  env("DATE_TIME_PARENT_FIELD")
-DATE_TIME_FIELD =  env("DATE_TIME_FIELD")
-
-# Sheme for connecting to elastic, for example: "http", or: "https"
-ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -144,7 +171,7 @@ if (env("DB_USE_SSL")):
     ssl_subpart['cert'] = env("SSL_CERT")
   if (env("SSL_CIPHER")):
     ssl_subpart['cipher'] = env("SSL_CIPHER")
-  
+
   SSL_OPTS= {
      'OPTIONS': {
             'ssl': ssl_subpart
