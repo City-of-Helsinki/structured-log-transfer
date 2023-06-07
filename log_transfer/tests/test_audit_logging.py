@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta
 from typing import List, Tuple, Any
 from unittest.mock import patch
@@ -8,6 +9,7 @@ from auditlog.models import LogEntry
 from django.db.models.sql.compiler import cursor_iter
 from django.test import override_settings
 from django.utils import timezone
+from elastic_transport import ApiError
 
 from log_transfer.tests import audit_logging
 from log_transfer.enums import Operation
@@ -529,3 +531,64 @@ def test_send_audit_log_with_limit__use_django_auditlog(user, fixed_datetime):
     total = hits["total"]
     value = total["value"]
     assert value == 2
+
+
+@pytest.mark.django_db
+@override_settings(
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
+)
+def test_send_audit_log__duplicate_error(user, fixed_datetime, settings):
+    audit_logging.log(
+        user,
+        "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
+        Operation.READ,
+        user,
+        get_time=fixed_datetime,
+        ip_address="192.168.1.1",
+    )
+
+    assert AuditLogEntry.objects.count() == 1
+
+    ids_1 = send_audit_log_to_elastic_search()
+    assert len(ids_1) == 1
+
+    assert AuditLogEntry.objects.filter(is_sent=True).count() == 1
+    AuditLogEntry.objects.update(is_sent=False)
+
+    ids_2 = send_audit_log_to_elastic_search()
+    assert len(ids_2) == 0
+
+    # When ES detects a duplicate, mark the log as sent
+    assert AuditLogEntry.objects.filter(is_sent=True).count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
+)
+def test_send_audit_log__duplicate_error__different_content(user, fixed_datetime, settings):
+    audit_logging.log(
+        user,
+        "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
+        Operation.READ,
+        user,
+        get_time=fixed_datetime,
+        ip_address="192.168.1.1",
+    )
+
+    assert AuditLogEntry.objects.count() == 1
+
+    ids_1 = send_audit_log_to_elastic_search()
+    assert len(ids_1) == 1
+
+    assert AuditLogEntry.objects.filter(is_sent=True).count() == 1
+
+    log = AuditLogEntry.objects.first()
+    log.is_sent = False
+    log.message["audit_event"]["origin"] = "foo"
+    log.save()
+
+    with pytest.raises(ApiError, match=re.escape("[200] Duplicate log entry with different content found.")):
+        send_audit_log_to_elastic_search()
+
+    assert AuditLogEntry.objects.filter(is_sent=False).count() == 1
