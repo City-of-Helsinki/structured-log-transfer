@@ -7,8 +7,7 @@ from typing import Any, Dict, List, TYPE_CHECKING, Optional, Generator
 from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
-from elastic_transport import ObjectApiResponse, ApiError
-from elasticsearch import Elasticsearch, ConflictError
+from elasticsearch import Elasticsearch
 
 from log_transfer.models import AuditLogEntry, User
 from structuredlogtransfer.settings import AuditLoggerType
@@ -18,8 +17,6 @@ if TYPE_CHECKING:
 
 
 ES_STATUS_CREATED = "created"
-HTTP_404_NOT_FOUND = 404
-HTTP_409_CONFLICT = 409
 LOGGER = logging.getLogger(__name__)
 
 
@@ -38,7 +35,7 @@ def init() -> Optional[Elasticsearch]:
             str(settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
         )
         return
-    es = Elasticsearch(
+    return Elasticsearch(
         [
             {
                 "host": settings.ELASTICSEARCH_HOST,
@@ -48,11 +45,6 @@ def init() -> Optional[Elasticsearch]:
         ],
         basic_auth=(settings.ELASTICSEARCH_USERNAME, settings.ELASTICSEARCH_PASSWORD),
     )
-    # Handle these statuses separately (don't raise an error)
-    # 404 - used for existence checks
-    # 409 - used for duplicate checks
-    es._ignore_status = (HTTP_404_NOT_FOUND, HTTP_409_CONFLICT)
-    return es
 
 
 def send_audit_log_to_elastic_search() -> Optional[List[str]]:
@@ -68,39 +60,17 @@ def send_audit_log_to_elastic_search() -> Optional[List[str]]:
             break
 
         message_body = entry.message.copy()
-        response: ObjectApiResponse = client.index(
+        response = client.index(
             index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX,
             id=str(entry.log.id),
             document=message_body,
             op_type="create",
         )
-
         LOGGER.info(f"Sending status: {response}")
 
-        created: bool = response.get("result") == ES_STATUS_CREATED
-        duplicate: bool = response.get("status") == HTTP_409_CONFLICT
-
-        if created:
+        if response.get("result") == ES_STATUS_CREATED:
             entry.mark_as_sent()
             result_ids.append(response.get("_id"))
-
-        elif duplicate:
-            response: ObjectApiResponse = client.get(
-                index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX,
-                id=str(entry.log.id),
-            )
-
-            # If an entry with this id is already in the index, raise an error if
-            # the content is different. This should be checked manually by someone.
-            if response.get("_source") != message_body:
-                raise ApiError(
-                    message="Duplicate log entry with different content found.",
-                    meta=response.meta,
-                    body=response.body,
-                )
-
-            # Otherwise, mark the entry as sent.
-            entry.mark_as_sent()
 
     return result_ids
 
