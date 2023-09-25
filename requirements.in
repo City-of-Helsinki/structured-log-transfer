@@ -7,4 +7,5 @@ elasticsearch
 pytest
 pytest-django
 pytest-factory
+pytest-xdist
 inflection

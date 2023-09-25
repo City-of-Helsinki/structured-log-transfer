@@ -12,5 +12,5 @@ curl -s --retry-all-errors --retry-delay 1 --retry 240 --insecure "$connection_s
 
 #Do the testing
 echo Running the tests..
-pytest
+pytest -vv --ignore-glob=log_transfer/tests/*_parallel.py
 echo Tests done, see the output above. See also elastic.log if you need to debug the elasticsearch logs.

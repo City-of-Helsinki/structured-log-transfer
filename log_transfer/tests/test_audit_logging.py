@@ -184,7 +184,7 @@ def test_send_audit_log(user, fixed_datetime, settings):
 def test_send_audit_log__use_django_auditlog(user, fixed_datetime):
     # database is cleared between tests, so it attempts to send to elastic using old id numbers
     # solution: delete the index and start over for each test
-    delete_elastic_index()
+    # delete_elastic_index()
 
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
     for addr in addresses:

@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
+from django.db import transaction
 from django.db.models.base import ModelBase
 from elastic_transport import ObjectApiResponse
 
@@ -28,7 +29,7 @@ def _iso8601_date(time: datetime) -> str:
     """Formats the timestamp in ISO-8601 format, e.g. '2020-06-01T00:00:00.000Z'."""
     return f"{time.replace(tzinfo=None).isoformat(timespec='milliseconds')}Z"
 
-
+@transaction.atomic
 def log(
     actor: Optional[Union[User, AnonymousUser]],
     actor_backend: str,
