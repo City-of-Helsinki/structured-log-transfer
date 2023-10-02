@@ -63,7 +63,7 @@ def send_audit_log_to_elastic_search() -> Optional[List[str]]:
             index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX,
             id=str(entry.log.id),
             document=message_body,
-            op_type="create",
+            # op_type="create", # If removed should default to "index" recreating entry using same id 
         )
         LOGGER.info(f"Sending status: {response}")
 
