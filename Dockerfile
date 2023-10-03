@@ -7,11 +7,13 @@ COPY requirements.in .
 
 RUN apt-install.sh \
         git \
-        netcat \
+        # netcat \
         libpq-dev \
         build-essential \
         gettext \
         libmariadb-dev \
+        pkg-config \
+        postgresql-client \
     && pip install -U pip \
     && pip install pip-tools \
     && pip install mysqlclient \

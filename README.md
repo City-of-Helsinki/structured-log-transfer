@@ -87,6 +87,12 @@ You can also use `make up` (or `make up2`) if you have make installed.
 When tests have completed, run `docker compose --profile test-1 --profile test-2 down --volumes --remove-orphans`
 (or `make down`) to remove the containers.
 
+### Parallel tests
+
+Parallel testing can be done only using `docker compose --profile test-3 up --build`. It runs localtest/entrypoint_test_parallel.sh script which does migrations before running pytest.
+
+That's needed, because for parallel tests pytest-xdist package is used. It's not designed to do parallel testing with shared database. Pytest fixtures run as many times as worker count, so it's quite complicated to setup proper clean tests. 
+
 ## Verifying the results
 
 Check either the shell script output or the `structured-log-transfer-test` container logs and look for

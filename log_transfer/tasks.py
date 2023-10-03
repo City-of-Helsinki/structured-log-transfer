@@ -2,10 +2,11 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from functools import cached_property
-from typing import Any, Dict, List, TYPE_CHECKING, Optional, Generator
+from typing import Any, Dict, List, TYPE_CHECKING, Optional
 
 from django.conf import settings
 from django.db.models import Q
+from django.db import transaction
 from django.utils import timezone
 from elasticsearch import Elasticsearch
 
@@ -47,6 +48,7 @@ def init() -> Optional[Elasticsearch]:
     )
 
 
+@transaction.atomic
 def send_audit_log_to_elastic_search() -> Optional[List[str]]:
     client = init()
     if client is None:
@@ -136,7 +138,7 @@ class DjangoAuditLogFacade(AuditLogFacade):
         self.log.additional_data["is_sent"] = True
         self.log.save()
 
-
+@transaction.atomic
 def get_unsent_entries() -> Generator[AuditLogFacade, None, None]:
 
     if settings.AUDIT_LOGGER_TYPE == AuditLoggerType.SINGLE_COLUMN_JSON:
@@ -164,7 +166,7 @@ def get_unsent_entries() -> Generator[AuditLogFacade, None, None]:
                         | Q(additional_data__is_sent=False)
                     ),
                 )
-                .order_by("timestamp")
+                .select_for_update().order_by("timestamp")
                 .iterator(chunk_size=settings.CHUNK_SIZE)
             )
         )
@@ -173,7 +175,7 @@ def get_unsent_entries() -> Generator[AuditLogFacade, None, None]:
     else:
         raise RuntimeError("Unknown audit logger type set.")
 
-
+@transaction.atomic
 def clear_audit_log_entries(days_to_keep: int = 30) -> None:
     # Only remove entries older than `X` days
 
@@ -181,7 +183,7 @@ def clear_audit_log_entries(days_to_keep: int = 30) -> None:
         AuditLogEntry.objects.filter(
             is_sent=True,
             created_at__lte=(timezone.now() - timedelta(days=days_to_keep)),
-        ).delete()
+        ).select_for_update().delete()
 
     elif settings.AUDIT_LOGGER_TYPE == AuditLoggerType.DJANGO_AUDITLOG:
         from auditlog.models import LogEntry
@@ -190,7 +192,7 @@ def clear_audit_log_entries(days_to_keep: int = 30) -> None:
             ~Q(additional_data__has_key="is_sent")  # support old entries
             | Q(additional_data__is_sent=True),
             timestamp__lte=(timezone.now() - timedelta(days=days_to_keep)),
-        ).delete()
+        ).select_for_update().delete()
 
     # Should never happen, but just in case
     else:

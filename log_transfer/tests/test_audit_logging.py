@@ -12,7 +12,8 @@ from django.utils import timezone
 from log_transfer.tests import audit_logging
 from log_transfer.enums import Operation
 from log_transfer.models import AuditLogEntry
-from log_transfer.tests.audit_logging import search_entries_from_elastic_search, get_entries_from_elastic_search
+from log_transfer.tests.audit_logging import search_entries_from_elastic_search, get_entries_from_elastic_search, \
+    delete_elastic_index
 from log_transfer.tasks import send_audit_log_to_elastic_search, clear_audit_log_entries
 from structuredlogtransfer.settings import AuditLoggerType
 
@@ -142,8 +143,13 @@ def test_log_additional_information(user):
 @pytest.mark.django_db
 @override_settings(
     AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
+    CLEAR_AUDIT_LOG_ENTRIES=True,
 )
 def test_send_audit_log(user, fixed_datetime, settings):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
     for addr in addresses:
         audit_logging.log(
@@ -176,8 +182,13 @@ def test_send_audit_log(user, fixed_datetime, settings):
 @pytest.mark.django_db
 @override_settings(
     AUDIT_LOGGER_TYPE=AuditLoggerType.DJANGO_AUDITLOG,
+    CLEAR_AUDIT_LOG_ENTRIES=True,
 )
 def test_send_audit_log__use_django_auditlog(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
     for addr in addresses:
         audit_logging.log(
@@ -280,6 +291,7 @@ def test_send_timestamp_in_root(user, fixed_datetime):
 @pytest.mark.django_db
 @override_settings(
     AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
+    CLEAR_AUDIT_LOG_ENTRIES=True,
 )
 def test_clear_audit_log(user, fixed_datetime, settings):
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
@@ -320,6 +332,7 @@ def test_clear_audit_log(user, fixed_datetime, settings):
 @pytest.mark.django_db
 @override_settings(
     AUDIT_LOGGER_TYPE=AuditLoggerType.DJANGO_AUDITLOG,
+    CLEAR_AUDIT_LOG_ENTRIES=True,
 )
 def test_clear_audit_log__use_django_auditlog(user, fixed_datetime):
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
@@ -355,7 +368,6 @@ def test_clear_audit_log__use_django_auditlog(user, fixed_datetime):
     assert LogEntry.objects.count() == 2
     assert LogEntry.objects.filter(id=new_sent_log.id).exists()
     assert LogEntry.objects.filter(id=expired_unsent_log.id).exists()
-
 
 @pytest.mark.django_db
 @override_settings(

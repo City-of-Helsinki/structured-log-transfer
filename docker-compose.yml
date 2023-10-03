@@ -12,6 +12,16 @@ services:
       POSTGRES_DB: databasename
     container_name: structured-log-transfer-db
 
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - structured-log-transfer-postgres
+
   elasticsearch-for-structured-log-transfer-test:
     build:
       context: ./localtest
@@ -71,6 +81,28 @@ services:
         - "host.docker.internal:host-gateway"
     entrypoint: /app/entrypoint_test.sh
     container_name: structured-log-transfer-test-2
+
+  parallel-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ELASTICSEARCH_HOST: "host.docker.internal:9200"
+      ELASTICSEARCH_SCHEME: "http"
+      DATABASE_URL: "postgres://user:password@structured-log-transfer-postgres/databasename"
+      DJANGO_SETTINGS_MODULE: "structuredlogtransfer.settings"
+      AUDIT_LOGGER_TYPE: "DJANGO_AUDITLOG"  # enables testing for django_auditlog
+    depends_on:
+      - structured-log-transfer-postgres
+      - elasticsearch-for-structured-log-transfer-test
+    volumes:
+      - ./localtest/entrypoint_test_parallel.sh:/app/entrypoint_test_parallel.sh
+    profiles:
+      - test-3
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    entrypoint: /app/entrypoint_test_parallel.sh
+    container_name: structured-log-transfer-test-3
 
 networks:
   default:
