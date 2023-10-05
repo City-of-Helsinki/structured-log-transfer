@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from functools import cached_property
-from typing import Any, Dict, List, TYPE_CHECKING, Optional
+from typing import Any, Dict, List, TYPE_CHECKING, Optional, Generator
 
 from django.conf import settings
 from django.db.models import Q
