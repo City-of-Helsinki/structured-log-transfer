@@ -166,7 +166,7 @@ def get_unsent_entries() -> Generator[AuditLogFacade, None, None]:
                         | Q(additional_data__is_sent=False)
                     ),
                 )
-                .select_for_update(of=('self',)).order_by("timestamp")
+                .order_by("timestamp")
                 .iterator(chunk_size=settings.CHUNK_SIZE)
             )
         )
