@@ -183,7 +183,7 @@ def clear_audit_log_entries(days_to_keep: int = 30) -> None:
         AuditLogEntry.objects.filter(
             is_sent=True,
             created_at__lte=(timezone.now() - timedelta(days=days_to_keep)),
-        ).select_for_update().delete()
+        ).delete()
 
     elif settings.AUDIT_LOGGER_TYPE == AuditLoggerType.DJANGO_AUDITLOG:
         from auditlog.models import LogEntry
@@ -192,7 +192,7 @@ def clear_audit_log_entries(days_to_keep: int = 30) -> None:
             ~Q(additional_data__has_key="is_sent")  # support old entries
             | Q(additional_data__is_sent=True),
             timestamp__lte=(timezone.now() - timedelta(days=days_to_keep)),
-        ).select_for_update().delete()
+        ).delete()
 
     # Should never happen, but just in case
     else:
