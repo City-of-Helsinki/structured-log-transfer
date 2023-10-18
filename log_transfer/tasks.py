@@ -166,7 +166,7 @@ def get_unsent_entries() -> Generator[AuditLogFacade, None, None]:
                         | Q(additional_data__is_sent=False)
                     ),
                 )
-                .order_by("timestamp")
+                .select_for_update(of=('self',)).order_by("timestamp")
                 .iterator(chunk_size=settings.CHUNK_SIZE)
             )
         )
@@ -183,7 +183,7 @@ def clear_audit_log_entries(days_to_keep: int = 30) -> None:
         AuditLogEntry.objects.filter(
             is_sent=True,
             created_at__lte=(timezone.now() - timedelta(days=days_to_keep)),
-        ).delete()
+        ).select_for_update().delete()
 
     elif settings.AUDIT_LOGGER_TYPE == AuditLoggerType.DJANGO_AUDITLOG:
         from auditlog.models import LogEntry
@@ -192,7 +192,7 @@ def clear_audit_log_entries(days_to_keep: int = 30) -> None:
             ~Q(additional_data__has_key="is_sent")  # support old entries
             | Q(additional_data__is_sent=True),
             timestamp__lte=(timezone.now() - timedelta(days=days_to_keep)),
-        ).delete()
+        ).select_for_update().delete()
 
     # Should never happen, but just in case
     else:
