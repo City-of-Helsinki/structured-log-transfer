@@ -226,6 +226,10 @@ def test_send_audit_log__use_django_auditlog(user, fixed_datetime):
     DATE_TIME_FIELD="different_date_time",
 )
 def test_send_different_audit_log(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     # Create another kind of log, this is in the same test to prevent
     # conflicting ids in database to be sent to elastic
     somedata = ["a", "b", "c"]
@@ -260,6 +264,10 @@ def test_send_different_audit_log(user, fixed_datetime):
     DATE_TIME_FIELD="date_time"
 )
 def test_send_timestamp_in_root(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     # Create another kind of log, this is in the same test to prevent
     # conflicting ids in database to be sent to elastic
 
@@ -375,6 +383,10 @@ def test_clear_audit_log__use_django_auditlog(user, fixed_datetime):
     CHUNK_SIZE=2,
 )
 def test_send_audit_log_in_chunks(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
     for addr in addresses:
         audit_logging.log(
@@ -426,6 +438,10 @@ def test_send_audit_log_in_chunks(user, fixed_datetime):
     CHUNK_SIZE=2,
 )
 def test_send_audit_log_in_chunks__use_django_auditlog(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
     for addr in addresses:
         audit_logging.log(
@@ -478,6 +494,10 @@ def test_send_audit_log_in_chunks__use_django_auditlog(user, fixed_datetime):
     BATCH_LIMIT=2,
 )
 def test_send_audit_log_with_limit(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
     for addr in addresses:
         audit_logging.log(
@@ -513,6 +533,10 @@ def test_send_audit_log_with_limit(user, fixed_datetime):
     BATCH_LIMIT=2,
 )
 def test_send_audit_log_with_limit__use_django_auditlog(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
     addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
     for addr in addresses:
         audit_logging.log(

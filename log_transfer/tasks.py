@@ -110,7 +110,7 @@ class SimpleAuditLogFacade(AuditLogFacade):
 
     def mark_as_sent(self) -> None:
         self.log.is_sent = True
-        self.log.save()
+        self.log.save(update_fields=["is_sent"])
 
 
 class DjangoAuditLogFacade(AuditLogFacade):
@@ -136,7 +136,7 @@ class DjangoAuditLogFacade(AuditLogFacade):
         if self.log.additional_data is None:
             self.log.additional_data = {}
         self.log.additional_data["is_sent"] = True
-        self.log.save()
+        self.log.save(update_fields=["additional_data"])
 
 @transaction.atomic
 def get_unsent_entries() -> Generator[AuditLogFacade, None, None]:
