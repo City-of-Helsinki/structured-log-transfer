@@ -30,6 +30,8 @@ env = environ.Env(
     AUDIT_LOG_ORIGIN=(str, ""),
     AUDIT_LOGGER_TYPE=(AuditLoggerType, AuditLoggerType.SINGLE_COLUMN_JSON),
     AUDIT_TABLE_NAME=(str, "audit_logs"),
+    BATCH_LIMIT=(int, 5000),
+    CHUNK_SIZE=(int, 500),
     CLEAR_AUDIT_LOG_ENTRIES=(bool, True),
     DATABASE_PASSWORD=(str, ""),
     DATABASE_URL=(str, ""),
@@ -98,6 +100,12 @@ ELASTICSEARCH_SCHEME = env("ELASTICSEARCH_SCHEME")
 
 # What kind of audit logger type to use, defined in AuditLoggerType
 AUDIT_LOGGER_TYPE = env("AUDIT_LOGGER_TYPE")
+
+# How many logs to fetch to memory at once from the database
+CHUNK_SIZE = env("CHUNK_SIZE")
+
+# Limit on how many logs should be sent during a single job execution
+BATCH_LIMIT = env("BATCH_LIMIT")
 
 # Application definition
 

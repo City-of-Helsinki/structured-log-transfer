@@ -92,6 +92,7 @@ When tests have completed, run `docker compose --profile test-1 --profile test-2
 Parallel testing can be done only using `docker compose --profile test-3 up --build`. It runs localtest/entrypoint_test_parallel.sh script which does migrations before running pytest.
 
 That's needed, because for parallel tests pytest-xdist package is used. It's not designed to do parallel testing with shared database. Pytest fixtures run as many times as worker count, so it's quite complicated to setup proper clean tests. 
+
 ## Verifying the results
 
 Check either the shell script output or the `structured-log-transfer-test` container logs and look for
@@ -108,6 +109,8 @@ if using docker compose) for elastic log output if necessary.
 | AUDIT_LOG_ORIGIN                  | str  | ""                           | Origin to write to elastic with the audit log entry                                                                                       |
 | AUDIT_LOGGER_TYPE                 | str  | "SINGLE_COLUMN_JSON"         | Which kind of audit logger to use. Options are defined in `structuredlogtransfer.settings.AuditLoggerType`                                |
 | AUDIT_TABLE_NAME                  | str  | "audit_logs"                 | Table name to read the logs from                                                                                                          |
+| BATCH_SIZE                        | int  | 5000                         | How many logs should be sent during a single job execution.                                                                               |
+| CHUNK_SIZE                        | int  | 500                          | How many logs to fetch to memory at once from the database.                                                                               |
 | CLEAR_AUDIT_LOG_ENTRIES           | bool | True                         | Clear audit log entries each month when monthly job is run. Set to False to disable this functionality even when running the monthly job. |
 | DATABASE_URL                      | str  | "postgres:///structuredlogs" | Set up for database connection for reading log entries from, see                                                                          |
 | DATE_TIME_FIELD                   | str  | "date_time"                  | Field name for fetching the elastic timestamp from json data                                                                              |
