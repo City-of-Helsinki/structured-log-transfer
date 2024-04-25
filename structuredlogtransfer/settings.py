@@ -172,7 +172,7 @@ dbenv=env.db()
 if (env("DB_USE_SSL")):
   ssl_subpart = {}
   if (env("SSL_CA")):
-    ssl_subpart['ssl-ca'] = env("SSL_CA")
+    ssl_subpart['ca'] = env("SSL_CA")
   if (env("SSL_KEY")):
     ssl_subpart['key'] = env("SSL_KEY")
   if (env("SSL_CERT")):

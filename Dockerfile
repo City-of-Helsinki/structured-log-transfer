@@ -31,7 +31,7 @@ RUN SECRET_KEY="only-used-for-collectstatic" python manage.py collectstatic
 # Uncomment this, if utility gets translated messages
 #RUN ./manage.py compilemessages
 
-ADD --chown=appuser:appuser https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem certs/
+ADD --chown=appuser:appuser https://cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem certs/
 
 #CMD ["echo", "Only run from cronjobs"]
 ENTRYPOINT ["./manage.py"]
