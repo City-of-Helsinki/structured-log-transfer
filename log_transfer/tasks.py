@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from functools import cached_property
-from typing import Any, Dict, List, TYPE_CHECKING, Optional
+from typing import Any, Dict, List, TYPE_CHECKING, Optional, Generator
 
 from django.conf import settings
 from django.db.models import Q
@@ -47,17 +47,20 @@ def init() -> Optional[Elasticsearch]:
         basic_auth=(settings.ELASTICSEARCH_USERNAME, settings.ELASTICSEARCH_PASSWORD),
     )
 
+
 @transaction.atomic
 def send_audit_log_to_elastic_search() -> Optional[List[str]]:
     client = init()
     if client is None:
         return
 
-    entries = get_unsent_entries()
-
     result_ids: List[str] = []
 
-    for entry in entries:
+    for count, entry in enumerate(get_unsent_entries()):
+        if count >= settings.BATCH_LIMIT:
+            print(f"Job limit of {settings.BATCH_LIMIT} logs reached, stopping...")
+            break
+
         message_body = entry.message.copy()
         response = client.index(
             index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX,
@@ -107,7 +110,7 @@ class SimpleAuditLogFacade(AuditLogFacade):
 
     def mark_as_sent(self) -> None:
         self.log.is_sent = True
-        self.log.save()
+        self.log.save(update_fields=["is_sent"])
 
 
 class DjangoAuditLogFacade(AuditLogFacade):
@@ -133,27 +136,40 @@ class DjangoAuditLogFacade(AuditLogFacade):
         if self.log.additional_data is None:
             self.log.additional_data = {}
         self.log.additional_data["is_sent"] = True
-        self.log.save()
+        self.log.save(update_fields=["additional_data"])
 
 @transaction.atomic
-def get_unsent_entries() -> List[AuditLogFacade]:
+def get_unsent_entries() -> Generator[AuditLogFacade, None, None]:
 
     if settings.AUDIT_LOGGER_TYPE == AuditLoggerType.SINGLE_COLUMN_JSON:
-        return [
+        yield from (
             SimpleAuditLogFacade(log=log)
-            for log in AuditLogEntry.objects.filter(is_sent=False).select_for_update().order_by("created_at")
-        ]
+            for log in (
+                AuditLogEntry.objects
+                .filter(is_sent=False)
+                .order_by("created_at")
+                .iterator(chunk_size=settings.CHUNK_SIZE)
+            )
+        )
 
     elif settings.AUDIT_LOGGER_TYPE == AuditLoggerType.DJANGO_AUDITLOG:
         from auditlog.models import LogEntry
 
-        return [
+        yield from (
             DjangoAuditLogFacade(log=log)
-            for log in LogEntry.objects.filter(
-                ~Q(additional_data__has_key="is_sent")  # support old entries
-                | Q(additional_data__is_sent=False),
-            ).select_for_update().order_by("timestamp")
-        ]
+            for log in (
+                LogEntry.objects
+                .select_related("actor")
+                .filter(
+                    (
+                        ~Q(additional_data__has_key="is_sent")  # support old entries
+                        | Q(additional_data__is_sent=False)
+                    ),
+                )
+                .select_for_update(of=('self',)).order_by("timestamp")
+                .iterator(chunk_size=settings.CHUNK_SIZE)
+            )
+        )
 
     # Should never happen, but just in case
     else:

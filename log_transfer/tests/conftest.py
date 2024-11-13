@@ -7,11 +7,8 @@ from django.utils import timezone
 
 from log_transfer.tests.audit_logging import delete_elastic_index
 
-#from shared.common.tests.conftest import *  # noqa
-
-from log_transfer.tests.factories import (
-    UserFactory,
-)
+from log_transfer.tests.audit_logging import delete_elastic_index
+from log_transfer.tests.factories import UserFactory
 
 @pytest.fixture
 def fixed_datetime() -> Callable[[], datetime]:
