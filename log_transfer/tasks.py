@@ -8,7 +8,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.db import transaction
 from django.utils import timezone
-from elasticsearch import Elasticsearch
+from elasticsearch import ConflictError, Elasticsearch
 
 from log_transfer.models import AuditLogEntry, User
 from structuredlogtransfer.settings import AuditLoggerType
@@ -61,18 +61,28 @@ def send_audit_log_to_elastic_search() -> Optional[List[str]]:
             print(f"Job limit of {settings.BATCH_LIMIT} logs reached, stopping...")
             break
 
-        message_body = entry.message.copy()
-        response = client.index(
-            index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX,
-            id=str(entry.log.id),
-            document=message_body,
-            op_type="create",
-        )
-        LOGGER.info(f"Sending status: {response}")
+        try:
+            id=str(entry.log.id)
+            message_body = entry.message.copy()
+            response = client.index(
+                index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX,
+                id=id,
+                document=message_body,
+                op_type="create",
+            )
+            LOGGER.info(f"Sending status: {response}")
 
-        if response.get("result") == ES_STATUS_CREATED:
+            if response.get("result") == ES_STATUS_CREATED:
+                entry.mark_as_sent()
+                result_ids.append(response.get("_id"))
+        except ConflictError:
+            """
+            If we receive conflict error, it means that the entry with same id is
+            already sent to the Elasticsearch.
+            """
+            LOGGER.warning(f"Skipping the document with id {id}, it seems to be already submitted.")
             entry.mark_as_sent()
-            result_ids.append(response.get("_id"))
+            result_ids.append(id)
 
     return result_ids
 
