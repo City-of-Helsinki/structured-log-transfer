@@ -48,7 +48,6 @@ def init() -> Optional[Elasticsearch]:
     )
 
 
-@transaction.atomic
 def send_audit_log_to_elastic_search() -> Optional[List[str]]:
     client = init()
     if client is None:
