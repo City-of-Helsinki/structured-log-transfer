@@ -82,7 +82,7 @@ def test_send_overlapping_audit_log__use_django_auditlog(run_count, user, fixed_
             "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
             Operation.READ,
             user,
-            get_time=lambda: fixed_datetime,
+            get_time=fixed_datetime,
             ip_address=addr,
             audit_logger_type=AuditLoggerType.DJANGO_AUDITLOG,
         )
