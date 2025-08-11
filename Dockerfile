@@ -1,28 +1,37 @@
 # ==============================
-FROM container-registry.platta-net.hel.fi/devops/helsinkitest/python:3.8-slim as appbase
+FROM helsinki.azurecr.io/ubi9/python-39-gdal AS appbase
 # ==============================
+WORKDIR /app
 RUN mkdir /entrypoint
-
 COPY requirements.in .
 
-RUN apt-install.sh \
+RUN dnf install -y dnf-plugins-core \
+    && dnf install -y \
         git \
-        # netcat \
-        libpq-dev \
-        build-essential \
+        libpq-devel \
+        # build-essential equivalent packages
+        make \
+        automake \
+        gcc \
+        gcc-c++ \
         gettext \
-        libmariadb-dev \
+        #libmariadb-devel \
         pkg-config \
-        postgresql-client \
+        postgresql \
     && pip install -U pip \
     && pip install pip-tools \
     && pip install mysqlclient \
     && pip-compile requirements.in \
     && pip uninstall -y pip-tools \
     && pip install -r /app/requirements.txt \
-    && pip cache purge \
     && pip uninstall -y pip \
-    && apt-cleanup.sh build-essential
+    && dnf remove -y \
+        # build-essential equivalent packages
+        make \
+        automake \
+        gcc \
+        gcc-c++ \
+        gettext
 
 COPY . .
 
