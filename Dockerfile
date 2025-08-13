@@ -9,29 +9,16 @@ RUN dnf install -y dnf-plugins-core \
     && dnf install -y \
         git \
         libpq-devel \
-        # build-essential equivalent packages
-        make \
-        automake \
-        gcc \
-        gcc-c++ \
-        gettext \
-        #libmariadb-devel \
         pkg-config \
         postgresql \
+        mysql \
     && pip install -U pip \
     && pip install pip-tools \
     && pip install mysqlclient \
     && pip-compile requirements.in \
     && pip uninstall -y pip-tools \
     && pip install -r /app/requirements.txt \
-    && pip uninstall -y pip \
-    && dnf remove -y \
-        # build-essential equivalent packages
-        make \
-        automake \
-        gcc \
-        gcc-c++ \
-        gettext
+    && pip uninstall -y pip
 
 COPY . .
 
