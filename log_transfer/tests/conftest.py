@@ -30,8 +30,3 @@ def django_db_modify_db_settings():
 def parallel_session_setup():
     delete_elastic_index()
     yield
-
-@pytest.fixture(scope="session")
-def db_no_flush(django_db_blocker):
-    with django_db_blocker.unblock():
-        yield

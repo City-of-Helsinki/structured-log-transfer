@@ -47,7 +47,7 @@ def init() -> Optional[Elasticsearch]:
         basic_auth=(settings.ELASTICSEARCH_USERNAME, settings.ELASTICSEARCH_PASSWORD),
     )
 
-
+@transaction.atomic
 def send_audit_log_to_elastic_search() -> Optional[List[str]]:
     client = init()
     if client is None:
@@ -79,9 +79,14 @@ def send_audit_log_to_elastic_search() -> Optional[List[str]]:
             If we receive conflict error, it means that the entry with same id is
             already sent to the Elasticsearch.
             """
-            LOGGER.warning(f"Skipping the document with id {id}, it seems to be already submitted.")
+            LOGGER.warning(f"Skipping the entry with id {id}, it seems to be already submitted.")
             entry.mark_as_sent()
             result_ids.append(id)
+        except Exception as ex:
+            """
+            Unknown exception, log it and keep going to avoid transaction rollbacks.
+            """
+            LOGGER.error(f"Entry with id {id} failed because of an exception ({ex}).")
 
     return result_ids
 
@@ -175,7 +180,7 @@ def get_unsent_entries() -> Generator[AuditLogFacade, None, None]:
                         | Q(additional_data__is_sent=False)
                     ),
                 )
-                .order_by("timestamp")
+                .select_for_update(of=('self',)).order_by("timestamp")
                 .iterator(chunk_size=settings.CHUNK_SIZE)
             )
         )
