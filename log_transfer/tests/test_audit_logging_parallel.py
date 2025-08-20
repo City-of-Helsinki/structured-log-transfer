@@ -27,7 +27,7 @@ AUDIT_LOG_COUNT=20
     AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
     CLEAR_AUDIT_LOG_ENTRIES=True,
 )
-def test_send_overlapping_audit_log(run_count, user, fixed_datetime, parallel_session_setup):  
+def test_send_overlapping_audit_log(run_count, user, fixed_datetime, parallel_session_setup_no_flush):  
     addresses = []
     for _ in range(AUDIT_LOG_COUNT):
         addresses.append(generate_random_ip())
@@ -69,7 +69,7 @@ def test_send_overlapping_audit_log(run_count, user, fixed_datetime, parallel_se
     AUDIT_LOGGER_TYPE=AuditLoggerType.DJANGO_AUDITLOG,
     CLEAR_AUDIT_LOG_ENTRIES=True,
 )
-def test_send_overlapping_audit_log__use_django_auditlog(run_count, user, fixed_datetime, parallel_session_setup):
+def test_send_overlapping_audit_log__use_django_auditlog(run_count, user, fixed_datetime, parallel_session_setup_no_flush):
     addresses = []
     for _ in range(AUDIT_LOG_COUNT):
         addresses.append(generate_random_ip())
