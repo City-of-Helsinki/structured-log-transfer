@@ -61,7 +61,7 @@ def send_audit_log_to_elastic_search() -> Optional[List[str]]:
             break
 
         try:
-            id=str(entry.log.id)
+            id = str(entry.log.id)
             message_body = entry.message.copy()
             response = client.index(
                 index=settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX,
@@ -82,11 +82,11 @@ def send_audit_log_to_elastic_search() -> Optional[List[str]]:
             LOGGER.warning(f"Skipping the entry with id {id}, it seems to be already submitted.")
             entry.mark_as_sent()
             result_ids.append(id)
-        except Exception as ex:
+        except Exception:
             """
             Unknown exception, log it and keep going to avoid transaction rollbacks.
             """
-            LOGGER.error(f"Entry with id {id} failed because of an exception ({ex}).")
+            LOGGER.exception(f"Entry with id {id} failed.")
 
     return result_ids
 
