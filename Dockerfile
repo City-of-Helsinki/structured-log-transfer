@@ -22,7 +22,7 @@ RUN dnf install -y dnf-plugins-core \
 
 # Django is configured to use /srv/static as STATIC_ROOT
 # so make sure it exists and user has permissions to it.
-RUN mkdir /srv/static && chown 1001:1001 /srv/static
+RUN mkdir /srv/static && chown 1001:0 /srv/static
 
 # Switch back to default non-root user.
 USER 1001
