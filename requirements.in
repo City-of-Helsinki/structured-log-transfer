@@ -3,7 +3,7 @@ django-extensions
 django-environ
 django-auditlog
 psycopg2
-elasticsearch
+elasticsearch~=8.0
 pytest
 pytest-django
 pytest-factory

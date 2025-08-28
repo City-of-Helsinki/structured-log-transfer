@@ -10,7 +10,22 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: databasename
-    container_name: structured-log-transfer-db
+    container_name: structured-log-transfer-db-postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  structured-log-transfer-mysql:
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: databasename
+    container_name: structured-log-transfer-db-mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
 
   pgadmin:
     image: dpage/pgadmin4
@@ -21,6 +36,15 @@ services:
       - "8080:80"
     depends_on:
       - structured-log-transfer-postgres
+
+  adminer:
+    image: adminer:latest
+    environment:
+      ADMINER_DEFAULT_SERVER: structured-log-transfer-mysql
+    ports:
+      - 7777:8080
+    depends_on:
+      - structured-log-transfer-mysql
 
   elasticsearch-for-structured-log-transfer-test:
     build:
@@ -82,7 +106,54 @@ services:
     entrypoint: /app/entrypoint_test.sh
     container_name: structured-log-transfer-test-2
 
-  parallel-test:
+  structured-log-transfer-test-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ELASTICSEARCH_HOST: "host.docker.internal"
+      ELASTICSEARCH_PORT: "9200"
+      ELASTICSEARCH_USERNAME:
+      ELASTICSEARCH_PASSWORD:
+      ELASTICSEARCH_SCHEME: "http"
+      DATABASE_URL: "mysql://root:password@structured-log-transfer-mysql/databasename"
+      DJANGO_SETTINGS_MODULE: "structuredlogtransfer.settings"
+      AUDIT_LOGGER_TYPE: "DJANGO_AUDITLOG"  # enables testing for django_auditlog
+    depends_on:
+      - structured-log-transfer-mysql
+      - elasticsearch-for-structured-log-transfer-test
+    volumes:
+      - ./localtest/entrypoint_test.sh:/app/entrypoint_test.sh
+    profiles:
+      - test-3
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    entrypoint: /app/entrypoint_test.sh
+    container_name: structured-log-transfer-test-3
+
+  structured-log-transfer-test-4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ELASTICSEARCH_HOST: "host.docker.internal:9200"
+      ELASTICSEARCH_SCHEME: "http"
+      DATABASE_URL: "mysql://root:password@structured-log-transfer-mysql/databasename"
+      DJANGO_SETTINGS_MODULE: "structuredlogtransfer.settings"
+      AUDIT_LOGGER_TYPE: "DJANGO_AUDITLOG"  # enables testing for django_auditlog
+    depends_on:
+      - structured-log-transfer-mysql
+      - elasticsearch-for-structured-log-transfer-test
+    volumes:
+      - ./localtest/entrypoint_test.sh:/app/entrypoint_test.sh
+    profiles:
+      - test-4
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    entrypoint: /app/entrypoint_test.sh
+    container_name: structured-log-transfer-test-4
+
+  parallel-test-1:
     build:
       context: .
       dockerfile: Dockerfile
@@ -96,14 +167,40 @@ services:
       - structured-log-transfer-postgres
       - elasticsearch-for-structured-log-transfer-test
     volumes:
-      - ./localtest/entrypoint_test_parallel.sh:/app/entrypoint_test_parallel.sh
+      - ./localtest/entrypoint_test_parallel_pq.sh:/app/entrypoint_test_parallel.sh
     profiles:
-      - test-3
+      - test-5
     extra_hosts:
         - "host.docker.internal:host-gateway"
     entrypoint: /app/entrypoint_test_parallel.sh
-    container_name: structured-log-transfer-test-3
+    container_name: structured-log-transfer-test-5
+
+  parallel-test-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ELASTICSEARCH_HOST: "host.docker.internal:9200"
+      ELASTICSEARCH_SCHEME: "http"
+      DATABASE_URL: "mysql://root:password@structured-log-transfer-mysql/databasename"
+      DJANGO_SETTINGS_MODULE: "structuredlogtransfer.settings"
+      AUDIT_LOGGER_TYPE: "DJANGO_AUDITLOG"  # enables testing for django_auditlog
+    depends_on:
+      - structured-log-transfer-mysql
+      - elasticsearch-for-structured-log-transfer-test
+    volumes:
+      - ./localtest/entrypoint_test_parallel_mysql.sh:/app/entrypoint_test_parallel.sh
+    profiles:
+      - test-6
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    entrypoint: /app/entrypoint_test_parallel.sh
+    container_name: structured-log-transfer-test-6
 
 networks:
   default:
     name: structuredlogtestnet
+
+volumes:
+  postgres_data:
+  mysql_data:
