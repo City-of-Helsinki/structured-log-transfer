@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import time
 from typing import List, Tuple, Any
 from unittest.mock import patch
 
@@ -362,6 +363,7 @@ def test_clear_audit_log__use_django_auditlog(user, fixed_datetime):
     expired_unsent_log = log_entries[1]
     expired_sent_log = log_entries[2]
 
+    new_sent_log.timestamp = timezone.now()
     new_sent_log.additional_data["is_sent"] = True
     new_sent_log.save()
 
