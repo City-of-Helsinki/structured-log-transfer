@@ -4,14 +4,12 @@ from typing import Callable
 import pytest
 
 from django.utils import timezone
+from django.test import TransactionTestCase
 
 from log_transfer.tests.audit_logging import delete_elastic_index
 
-#from shared.common.tests.conftest import *  # noqa
-
-from log_transfer.tests.factories import (
-    UserFactory,
-)
+from log_transfer.tests.audit_logging import delete_elastic_index
+from log_transfer.tests.factories import UserFactory
 
 @pytest.fixture
 def fixed_datetime() -> Callable[[], datetime]:
@@ -30,6 +28,9 @@ def django_db_modify_db_settings():
 @pytest.fixture(scope="session")
 @pytest.mark.PARALLEL_DJANGO_AUDITLOG
 @pytest.mark.PARALLEL_SINGLE_COLUMN_JSON
-def parallel_session_setup():
+def parallel_session_setup_no_flush():
+    post_teardown = TransactionTestCase._post_teardown
+    TransactionTestCase._post_teardown = lambda self: None
     delete_elastic_index()
     yield
+    TransactionTestCase._post_teardown = post_teardown

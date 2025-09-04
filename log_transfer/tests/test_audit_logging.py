@@ -1,8 +1,12 @@
 from datetime import datetime, timedelta
+import time
+from typing import List, Tuple, Any
+from unittest.mock import patch
 
 import pytest
 
 from auditlog.models import LogEntry
+from django.db.models.sql.compiler import cursor_iter
 from django.test import override_settings
 from django.utils import timezone
 
@@ -223,14 +227,12 @@ def test_send_audit_log__use_django_auditlog(user, fixed_datetime):
     DATE_TIME_FIELD="different_date_time",
 )
 def test_send_different_audit_log(user, fixed_datetime):
-
     # database is cleared between tests, so it attempts to send to elastic using old id numbers
     # solution: delete the index and start over for each test
     delete_elastic_index()
 
     # Create another kind of log, this is in the same test to prevent
     # conflicting ids in database to be sent to elastic
-
     somedata = ["a", "b", "c"]
     for data in somedata:
         audit_logging.differentKindOfLog(
@@ -263,7 +265,6 @@ def test_send_different_audit_log(user, fixed_datetime):
     DATE_TIME_FIELD="date_time"
 )
 def test_send_timestamp_in_root(user, fixed_datetime):
-
     # database is cleared between tests, so it attempts to send to elastic using old id numbers
     # solution: delete the index and start over for each test
     delete_elastic_index()
@@ -362,6 +363,7 @@ def test_clear_audit_log__use_django_auditlog(user, fixed_datetime):
     expired_unsent_log = log_entries[1]
     expired_sent_log = log_entries[2]
 
+    new_sent_log.timestamp = timezone.now()
     new_sent_log.additional_data["is_sent"] = True
     new_sent_log.save()
 
@@ -376,3 +378,192 @@ def test_clear_audit_log__use_django_auditlog(user, fixed_datetime):
     assert LogEntry.objects.count() == 2
     assert LogEntry.objects.filter(id=new_sent_log.id).exists()
     assert LogEntry.objects.filter(id=expired_unsent_log.id).exists()
+
+@pytest.mark.django_db
+@override_settings(
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
+    CHUNK_SIZE=2,
+)
+def test_send_audit_log_in_chunks(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
+    addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
+    for addr in addresses:
+        audit_logging.log(
+            user,
+            "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
+            Operation.READ,
+            user,
+            get_time=fixed_datetime,
+            ip_address=addr,
+        )
+
+    assert AuditLogEntry.objects.count() == 3
+
+    yielded_items: List[List[Tuple[Any, ...]]] = []
+
+    def middleware(*args, **kwargs):
+        for item in cursor_iter(*args, **kwargs):
+            yielded_items.append(item)
+            yield item
+
+    # Mock database cursor to inspect items yielded in a single batch
+    with patch("django.db.models.sql.compiler.cursor_iter", side_effect=middleware):
+        ids = send_audit_log_to_elastic_search()
+
+    # All three logs were sent, but they were fetched in two batches
+    assert len(ids) == 3
+    assert len(yielded_items) == 2
+
+    # First batch had two logs, second batch had one
+    assert len(yielded_items[0]) == 2
+    assert len(yielded_items[1]) == 1
+
+    result = get_entries_from_elastic_search(ids)
+
+    assert len(result.get("docs")) == 3
+
+    # Test search
+
+    result = search_entries_from_elastic_search()
+    hits = result["hits"]
+    total = hits["total"]
+    value = total["value"]
+    assert value == 3
+
+
+@pytest.mark.django_db
+@override_settings(
+    AUDIT_LOGGER_TYPE=AuditLoggerType.DJANGO_AUDITLOG,
+    CHUNK_SIZE=2,
+)
+def test_send_audit_log_in_chunks__use_django_auditlog(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
+    addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
+    for addr in addresses:
+        audit_logging.log(
+            user,
+            "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
+            Operation.READ,
+            user,
+            get_time=fixed_datetime,
+            ip_address=addr,
+            audit_logger_type=AuditLoggerType.DJANGO_AUDITLOG,
+        )
+
+    assert LogEntry.objects.count() == 3
+
+    yielded_items: List[List[Tuple[Any, ...]]] = []
+
+    def middleware(*args, **kwargs):
+        for item in cursor_iter(*args, **kwargs):
+            yielded_items.append(item)
+            yield item
+
+    # Mock database cursor to inspect items yielded in a single batch
+    with patch("django.db.models.sql.compiler.cursor_iter", side_effect=middleware):
+        ids = send_audit_log_to_elastic_search()
+
+    # All three logs were sent, but they were fetched in two batches
+    assert len(ids) == 3
+    assert len(yielded_items) == 2
+
+    # First batch had two logs, second batch had one
+    assert len(yielded_items[0]) == 2
+    assert len(yielded_items[1]) == 1
+
+    result = get_entries_from_elastic_search(ids)
+
+    assert len(result.get("docs")) == 3
+
+    # Test search
+
+    result = search_entries_from_elastic_search()
+    hits = result["hits"]
+    total = hits["total"]
+    value = total["value"]
+    assert value == 3
+
+
+@pytest.mark.django_db
+@override_settings(
+    AUDIT_LOGGER_TYPE=AuditLoggerType.SINGLE_COLUMN_JSON,
+    BATCH_LIMIT=2,
+)
+def test_send_audit_log_with_limit(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
+    addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
+    for addr in addresses:
+        audit_logging.log(
+            user,
+            "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
+            Operation.READ,
+            user,
+            get_time=fixed_datetime,
+            ip_address=addr,
+        )
+
+    assert AuditLogEntry.objects.count() == 3
+
+    ids = send_audit_log_to_elastic_search()
+    assert len(ids) == 2
+
+    result = get_entries_from_elastic_search(ids)
+
+    assert len(result.get("docs")) == 2
+
+    # Test search
+
+    result = search_entries_from_elastic_search()
+    hits = result["hits"]
+    total = hits["total"]
+    value = total["value"]
+    assert value == 2
+
+
+@pytest.mark.django_db
+@override_settings(
+    AUDIT_LOGGER_TYPE=AuditLoggerType.DJANGO_AUDITLOG,
+    BATCH_LIMIT=2,
+)
+def test_send_audit_log_with_limit__use_django_auditlog(user, fixed_datetime):
+    # database is cleared between tests, so it attempts to send to elastic using old id numbers
+    # solution: delete the index and start over for each test
+    delete_elastic_index()
+
+    addresses = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
+    for addr in addresses:
+        audit_logging.log(
+            user,
+            "shared.oidc.auth.HelsinkiOIDCAuthenticationBackend",
+            Operation.READ,
+            user,
+            get_time=fixed_datetime,
+            ip_address=addr,
+            audit_logger_type=AuditLoggerType.DJANGO_AUDITLOG,
+        )
+
+    assert LogEntry.objects.count() == 3
+
+    ids = send_audit_log_to_elastic_search()
+    assert len(ids) == 2
+
+    result = get_entries_from_elastic_search(ids)
+
+    assert len(result.get("docs")) == 2
+
+    # Test search
+
+    result = search_entries_from_elastic_search()
+    hits = result["hits"]
+    total = hits["total"]
+    value = total["value"]
+    assert value == 2
