@@ -35,6 +35,7 @@ RUN SECRET_KEY="only-used-for-collectstatic" python manage.py collectstatic
 #RUN ./manage.py compilemessages
 
 ADD --chown=1001:0 https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem certs/
+ADD --chown=1001:0 https://www.digicert.com/CACerts/DigiCertGlobalRootCA.crt.pem certs/
 
 #CMD ["echo", "Only run from cronjobs"]
 ENTRYPOINT ["./manage.py"]
