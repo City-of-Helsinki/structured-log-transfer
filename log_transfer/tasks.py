@@ -142,7 +142,7 @@ class DjangoAuditLogFacade(AuditLogFacade):
                 "origin": settings.AUDIT_LOG_ORIGIN,
                 "target": self.log.object_repr,
                 "environment": settings.AUDIT_LOG_ENVIRONMENT,
-                "message": self.log.changes,
+                "message": self.log.changes_str,
             }
         }
 
