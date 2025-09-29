@@ -11,6 +11,7 @@ from django.utils import timezone
 from elasticsearch import ConflictError, Elasticsearch
 
 from log_transfer.models import AuditLogEntry, User
+from log_transfer.utils import changes_as_json_str
 from structuredlogtransfer.settings import AuditLoggerType
 
 if TYPE_CHECKING:
@@ -35,7 +36,7 @@ def init() -> Optional[Elasticsearch]:
             str(settings.ELASTICSEARCH_PORT) + ", Index: " +
             str(settings.ELASTICSEARCH_APP_AUDIT_LOG_INDEX)
         )
-        return
+        return None
     return Elasticsearch(
         [
             {
@@ -51,7 +52,7 @@ def init() -> Optional[Elasticsearch]:
 def send_audit_log_to_elastic_search() -> Optional[List[str]]:
     client = init()
     if client is None:
-        return
+        return None
 
     result_ids: List[str] = []
 
@@ -142,7 +143,7 @@ class DjangoAuditLogFacade(AuditLogFacade):
                 "origin": settings.AUDIT_LOG_ORIGIN,
                 "target": self.log.object_repr,
                 "environment": settings.AUDIT_LOG_ENVIRONMENT,
-                "message": self.log.changes_str,
+                "message": changes_as_json_str(self.log.changes),
             }
         }
 
